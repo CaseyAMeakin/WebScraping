@@ -4,9 +4,9 @@
 
 The following functions are defined:
 
-**QueryRT**([array]movie) - Performs a query on a movie title and movie year returning URL to best match RT movie web page. Failing that it returns an error code.  Input is an [array]movie = ([string]year,[string]title).
+**queryRT**([array]movie) - Performs a query on a movie title and movie year returning URL to best match RT movie web page. Failing that it returns an error code.  Input is an [array]movie = ([string]year,[string]title).
  
-**getMovieMetaData**([string]url) - Given a RT movie page URL, return a dictionary of movie meta data including:
+**getMovieMetaDataRT**([string]url) - Given a RT movie page URL, return a dictionary of movie meta data including:
  - date movie was published
  - movie runtime
  - tomato meter for all critics
