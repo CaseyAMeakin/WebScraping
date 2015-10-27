@@ -1,6 +1,6 @@
 # WebScraping
 
-RottenTomatoes (RT)
+## RottenTomatoes (RT)
 
 The following functions are defined:
 
