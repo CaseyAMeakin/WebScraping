@@ -1,6 +1,6 @@
 # WebScraping
 
-Webscraping routines for Rotten Tomatoes(RT) and Internet Movie Query Engine (MRQE)
+Webscraping routines for Rotten Tomatoes (RT) and Internet Movie Query Engine (MRQE). These python routines depend on Beautiful Soup (bs4) and natularl language toolkit (nltk).
 
 
 #### RottenTomatoes (RT)
