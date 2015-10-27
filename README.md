@@ -1,5 +1,8 @@
 # WebScraping
 
+Webscraping routines for Rotten Tomatoes(RT) and Internet Movie Query Engine (MRQE)
+
+
 #### RottenTomatoes (RT)
 
 The following functions are defined:
