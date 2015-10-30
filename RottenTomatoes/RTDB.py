@@ -1,5 +1,5 @@
 """
-Mostly wrappers for SQL querys on a database to store
+Mostly wrappers for SQL queries on a database to store
 scraped Rotten Tomatoes data.
 """
 
