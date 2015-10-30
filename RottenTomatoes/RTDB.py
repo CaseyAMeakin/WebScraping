@@ -56,6 +56,7 @@ def updateTableRowKeyValueString(con,table,rowid,key,stringValue):
     cur = con.cursor()
     sql_ = """update {0} set {1} =  "{2}" where rowid = {3};"""
     sqlcmd = sql_.format(table,key,stringValue,rowid)
+    
     result = con.execute(sqlcmd)
     con.commit()
 
@@ -66,18 +67,24 @@ def populateRTURL(con,movieList,logfname="populateRTURL.log"):
 
     for movie in movieList:
         sqlGetRowid = sqlGetRowid_.format(movie[0],movie[1])
-        rowid = cur.execute(sqlGetRowid).fetchall()
-        if(len(rowid) != 1):
+        rowid_ = cur.execute(sqlGetRowid).fetchall()
+        if len(rowid_) != 1:
             msg = "{0}\t{1}\t{2}\t{3}" \
                 .format(movie[0],movie[1],'populateRTURL.Error.rowid',datetime.now().isoformat())
             print msg
             logfile.write(msg+"\n")
             return
+        try:
+            rowid = rowid_[0][0]
+        except:
+            msg = "{0}\t{1}\t{2}\t{3}" \
+                .format(movie[0],movie[1],'populateRTURL.Error.rowid',datetime.now().isoformat())
+            
         result = getMovieURLRT(movie)
         url = result[2]
-        if not "error" in url.lower():
+        if "error" not in url.lower():
             try:
-                updateTableRowKeyValueString(con,"movies",rowid[0],"rtmovieurl",url)
+                updateTableRowKeyValueString(con,"movies",rowid,"rtmovieurl",url)
             except:
                 msg = "{0}\t{1}\t{2}\t{3}".format(result[0],result[1],'Sqlite3.Error',datetime.now().isoformat())
                 print msg
