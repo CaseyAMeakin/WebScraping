@@ -63,15 +63,20 @@ def queryRT(movie):
         #        return 'queryRTError.SearchResultsError'
         return h1_movie_title, h1_movie_year,res.geturl()
 
-
 def getMovieMetaDataRT(url):
 
+    keys = ['datePublished',
+            'tmeter_all',
+            'tmeter_top',
+            'criticConsensus',
+            'runtime',
+            'Rating',
+            'RatingNotes']
     metaData = {}
-    metaData['datePublished'] = ''   
-    metaData['tmeter_all'] = ''      
-    metaData['tmeter_top'] = ''      
-    metaData['criticConsensus'] = '' 
-    metaData['runtime'] = ''         
+    for key in keys:
+        metaData[key] = ''
+    
+
 
     if('queryRTError' in url):
         return metaData
@@ -170,7 +175,7 @@ def getMovieMetaDataRT(url):
     return metaData
 
 
-def getMovieReviewLinksRT(url):
+def getMovieReviewDataRT(url):
     if('queryRTError' in url):
         return
     
