@@ -15,24 +15,45 @@ def get_only_text(elem):
         if isinstance(item,bs4.element.NavigableString):
             yield item
 
-def queryRT(movie):
+
+def getMovieURLRT(movie):
+    """ 
+    Return RT movie page URL by sending a simple query to the rottentomatoes website.
+
+    Three classes of results from query:
+    1. Query lands directly on movie page: identify by 
+    Case identified by: The h1 heading in the "main_container" divider has class "title".
+    Action in this case: simply return the url of the page.
+
+    2. Query returns a list of relevant matches.
+    Case identified by: The h1 heading in the "main_container" divider contains the phrase 
+    "Search Results for".
+    Action in this case: select the first match in the list of movie results as long as the 
+    movie year for that entry agrees with the query, otherwise return an error string
+    containing the text "getMovieURLRT.Error".
+
+    3. Query returns no: identify 
+    Case identified by: The h1 heading in the "main_container" divider contains the phrase
+    "Sorry, no results found for"
+    Action in this case: return an error string containing the text "getMovieURLRT.Error".
+    """
+
     base_url = 'http://www.rottentomatoes.com'
     base_search_url = base_url + '/search/?search='
+
     movie_title = unicode(movie[1])
     movie_title_words = word_tokenize(stripPunct(movie_title))
-    #print movie_title
     movie_year  = movie[0]
+
     search_url = base_search_url
-    # construct search URL
+
     for word in movie_title_words:
         search_url = search_url + word.lower() + '+'
     search_url = search_url+str(movie[0])
-    #print search_url
-    # get search resulets
     try:
         res = urllib2.urlopen(search_url)
     except (urllib2.URLError, urllib2.HTTPError):
-        return 'queryRTError.urlopen'
+        return 'getMovieURLRT.Error.urlopen'
     f = res.read()
 
     soup = bs(f,'lxml')
@@ -40,6 +61,8 @@ def queryRT(movie):
     #print title_words
     if 'search' in title_words:
         ul = soup.find('ul',attrs={"id":"movie_results_ul"})
+        
+
         lis = ul.findAll('li')
         for li in lis:
             li_movie_year = stripPunct(li.find('span',attrs={"class":"movie_year"}).get_text()).strip()
@@ -53,7 +76,7 @@ def queryRT(movie):
                 url = base_url + li.find('a',attrs={"class":"articleLink"})['href']
                 return li_movie_title, li_movie_year, url
             
-        return movie_title, movie_year, 'queryRTError.SearchResultError'
+        return movie_title, movie_year, 'getMovieURLRT.Error.SearchResultError'
     else:
         h1_movie_title = (''.join(get_only_text(soup.find('h1',attrs={"id":"movie-title"})))).strip()
         h1_movie_year = stripPunct(soup.find('h1',attrs={"id":"movie-title"}).find('span',attrs={'class':'h3 year'}).get_text()).strip()
