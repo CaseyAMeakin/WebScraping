@@ -5,6 +5,7 @@ from bs4 import BeautifulSoup as bs
 import bs4
 from nltk import word_tokenize
 
+
 def stripPunct(to_translate, translate_to=u''):
     not_letters_or_digits = u'!"#%\'()*+,-./:;<=>?@[\]^_`{|}~'
     translate_table = dict((ord(char), translate_to) for char in not_letters_or_digits)
@@ -18,12 +19,12 @@ def get_only_text(elem):
 
 def getMovieURLRT(movie):
     """ 
-    Return RT movie page URL by sending a simple query to the rottentomatoes website.
+    Returns the RT movie page URL by sending a simple query to the rottentomatoes website.
 
     Three classes of results from query:
     1. Query lands directly on movie page: identify by 
     Case identified by: The h1 heading in the "main_container" divider has class "title".
-    Action in this case: simply return the url of the page.
+    Action in this case: simply return the url of the page together with movie year and title.
 
     2. Query returns a list of relevant matches.
     Case identified by: The h1 heading in the "main_container" divider contains the phrase 
@@ -45,46 +46,69 @@ def getMovieURLRT(movie):
     movie_title_words = word_tokenize(stripPunct(movie_title))
     movie_year  = movie[0]
 
+    # construct query url
     search_url = base_search_url
-
     for word in movie_title_words:
         search_url = search_url + word.lower() + '+'
     search_url = search_url+str(movie[0])
+
+    # open query url
     try:
         res = urllib2.urlopen(search_url)
     except (urllib2.URLError, urllib2.HTTPError):
-        return 'getMovieURLRT.Error.urlopen'
+        return (movie[0],movie[1],'getMovieURLRT.Error.urlopen')
+
+    # read the page and parse with bs4
     f = res.read()
+    resultsSoup = bs(f,'lxml')
 
-    soup = bs(f,'lxml')
-    title_words = [word.lower() for word in word_tokenize(soup.find('title').get_text())]
-    #print title_words
-    if 'search' in title_words:
-        ul = soup.find('ul',attrs={"id":"movie_results_ul"})
-        
+    # find main_contents container div and h1 header
+    divMainContainer = resultsSoup.find("div",attrs={"id":"main_container"})
+    if not divMainContainer: 
+        return (movie[0],movie[1],'getMovieURLRT.Error.divMainContainer')
+    h1MainContainer  = divMainContainer.find("h1")
+    if not h1MainContainer:
+        return (movie[0],movie[1],'getMovieURLRT.Error.h1MainContainer')
 
-        lis = ul.findAll('li')
-        for li in lis:
-            li_movie_year = stripPunct(li.find('span',attrs={"class":"movie_year"}).get_text()).strip()
-            if(int(li_movie_year) == int(movie_year)):
-                li_movie_title = li.find('a',attrs={"class":"articleLink"}).get_text().strip()
-                #li_movie_title = word_tokenize(stripPunct(unicode(li.find('a',attrs={"class":"articleLink"}).get_text())))
-                #stray = [i for i in set(set(movie_title_words) - set(li_movie_title_words))]
-                #stray = stray + [i for i in set(set(li_movie_title_words) - set(movie_title_words))]
-                #if(len(stray)==0):
-                #print li_movie_title
-                url = base_url + li.find('a',attrs={"class":"articleLink"})['href']
-                return li_movie_title, li_movie_year, url
-            
-        return movie_title, movie_year, 'getMovieURLRT.Error.SearchResultError'
-    else:
-        h1_movie_title = (''.join(get_only_text(soup.find('h1',attrs={"id":"movie-title"})))).strip()
-        h1_movie_year = stripPunct(soup.find('h1',attrs={"id":"movie-title"}).find('span',attrs={'class':'h3 year'}).get_text()).strip()
-        #for word in movie_title:
-        #    if word.lower() not in title_words:
-        #        print 'error: inconsistent search result'
-        #        return 'queryRTError.SearchResultsError'
-        return h1_movie_title, h1_movie_year,res.geturl()
+    # Case 1. directly lands on movie page
+    if h1MainContainer.has_attr('class'):
+        if "title" in h1MainContainer.attrs['class']:
+            return (movie[0],movie[1],res.geturl())
+
+    # Case 2. list of search results
+    if "search" in h1MainContainer.get_text().lower():
+        divResultsAllTab = divMainContainer.find("div",attrs={"id":"results_all_tab"})
+        if not divResultsAllTab:
+            return (movie[0],movie[1],'getMovieURLRT.Error.divResultsAllTab')
+        ulMovieResults = divResultsAllTab.find("ul",attrs={"id":"movie_results_ul"})
+        if not ulMovieResults:
+            return (movie[0],movie[1],'getMovieURLRT.Error.ulMovieResults')
+        liMovies = ulMovieResults.findAll("li")
+        if not liMovies:
+            return (movie[0],movie[1],'getMovieURLRT.Error.liMovies')
+        divFirstMovieBody = liMovies[0].find("div",attrs={"class":"media-body"})
+        if not divFirstMovieBody:
+            return (movie[0],movie[1],'getMovieURLRT.Error.divFirstMovieBody')
+        divFirstMovieHead = divFirstMovieBody.find("div",attrs={"class":"media-heading"})
+        if not divFirstMovieHead:
+            return (movie[0],movie[1],'getMovieURLRT.Error.divFirstMovieHead')
+        firstMovieAnchor = divFirstMovieHead.find("a",attrs={"class":"articleLink"})
+        if not firstMovieAnchor:
+            return (movie[0],movie[1],'getMovieURLRT.Error.firstMovieAnchor')
+        #firstMovieTitle = firstMovieAnchor.get_text()
+        firstMovieSpanYear = divFirstMovieHead.find("span",attrs={"class":"movie_year"})
+        if firstMovieSpanYear:
+            firstMovieYear = re.search("(\d{4})",firstMovieSpanYear.get_text()).group(0)
+            if int(firstMovieYear) != int(movie[0]):
+                return (movie[0],movie[1],'getMovieURLRT.Error.firstMovieYearMatch')
+        else:
+            return (movie[0],movie[1],'getMovieURLRT.Error.firstMovieSpanYear')
+        firstMovieURL = base_url + firstMovieAnchor.attrs['href']
+        return  (movie[0],movie[1],firstMovieURL)
+
+    # Case 3. query returns no results or some other unaccounted for case
+    return (movie[0],movie[1],'getMovieURLRT.Error.NoResults')
+
 
 def getMovieMetaDataRT(url):
 
