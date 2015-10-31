@@ -6,15 +6,23 @@ import bs4
 from nltk import word_tokenize
 
 
+def checkFind(item,itemName):
+    if not item:
+        errorCode = 'getMovieMetaDataRT.Error.' + itemName
+        return errorCode,{}
+
 def stripPunct(to_translate, translate_to=u''):
     not_letters_or_digits = u'!"#%\'()*+,-./:;<=>?@[\]^_`{|}~'
     translate_table = dict((ord(char), translate_to) for char in not_letters_or_digits)
     return to_translate.translate(translate_table)
 
-def get_only_text(elem):
+def get_parent_text(elem):
+    parentItems = []
     for item in elem.children:
         if isinstance(item,bs4.element.NavigableString):
-            yield item
+            parentItems.append(item)
+    justParentText = "".join(parentItems)
+    return justParentText.strip()
 
 
 def getMovieURLRT(movie):
@@ -121,50 +129,104 @@ def getMovieMetaDataRT(url):
     """
     
     """
-    
-    keys = ['datePublished',
-            'tmeter_all',
-            'tmeter_top',
-            'criticConsensus',
-            'runtime',
-            'Rating',
-            'RatingNotes']
-    metaData = {}
-    for key in keys: metaData[key] = ''
-    
-    
+
     try:
         res = urllib2.urlopen(url)
     except (urllib2.URLError, urllib2.HTTPError):
-        return 'getMovieMetaDataRT.urlopen', keys
+        return 'getMovieMetaDataRT.Error.urlopen', {}
     soup = bs(res.read(),'lxml')
+
+
+    divScorePanel = soup.find("div",attrs={"id":"scorePanel"})
+    checkFind(divScorePanel,'divScorePanel')
+
+    divTabContent = divScorePanel.find("div",attrs={"class":"tab-content"})
+    checkFind(divTabContent,'divTabContent')
+
+    divAllCriticsNumbers = divTabContent.find("div",attrs={"id":"all-critics-numbers"})
+    checkFind(divAllCriticsNumbers,'divAllCriticsNumbers')
+
+    spanAllCriticsRatingValue = divAllCriticsNumbers.find("span",attrs={"itemprop":"ratingValue"})
+    checkFind(spanAllCriticsRatingValue,'spanAllCriticsRatingValue')
+
+    divTopCriticsNumbers = divTabContent.find("div",attrs={"id":"top-critics-numbers"})
+    checkFind(divTopCriticsNumbers,'divTopCriticsNumbers')
+
+    spanTopCriticsRatingValue = divTopCriticsNumbers.find("span",attrs={"itemprop":"ratingValue"})
+    checkFind(spanTopCriticsRatingValue,'spanTopCriticsRatingValue')
+    
+    pCriticConsensus = divTopCriticsNumbers.find("p",attrs={"class":"critic_consensus"})
+    checkFind(pCriticConsensus,'pCriticConsensus')
+
+    divMovieInfo = soup.find("div",attrs={"class":"movie_info"})
+    checkFind(divMovieInfo,'divMovieInfo')
+    
+    pMovieSynopsis = divMovieInfo.find("p",attrs={"id":"movieSynopsis"})
+    checkFind(pMovieSynopsis,'pMovieSynopsis')
+
+    spanMovieSynopsisRemaining = pMovieSynopsis.find("span",attrs={"id":"movieSynopsisRemaining"})
+    checkFind(spanMovieSynopsisRemaining,'spanMovieSynopsisRemaining')
+
+    tableMovieInfo = divMovieInfo.find("table")
+    checkFind(tableMovieInfo,'tableMovieInfo')
+
+    tdContentRating = tableMovieInfo.find("td",attrs={"itemprop":"contentRating"})
+    checkFind(tdContentRating,'tdContentRating')
+
+    spansGenre = tableMovieInfo.findAll("span",attrs={"itemprop":"genre"})
+    checkFind(spansGenre,'spansGenre')
+
+    tdDatePublished = tableMovieInfo.find("td",attrs={"itemprop":"datePublished"})
+    checkFind(tdDatePublished,'tdDatePublished')
+    
+    tdDirector =  tableMovieInfo.find("td",attrs={"itemprop":"director"})
+    checkFind(tdDirector,'tdDirector')
+
+    spanProductionCompany = divMovieInfo.find("span",attrs={"itemprop":"productionCompany"})
+    checkFind(spanProductionCompany,'spanProductionCompany')
+
+    timeDuration =divMovieInfo.find("time",attrs={"itemprop":"duration"})
+    checkFind(timeDuration,'timeDuration')
+
+
+    # Init metaData dictionary
+
+    metaData = {}
+
+
+    # Parse elements pulled from page, add to dictionary
+
+    allCriticsRatingValue = spanAllCriticsRatingValue.get_text()
+    topCriticsRatingValue = spanTopCriticsRatingValue.get_text()
+    criticConsensus = get_parent_text(pCriticConsensus)
+    movieSynopsis = get_parent_text(pMovieSynopsis)
+    movieSynopsisRemaining = spanMovieSynopsisRemaining.get_text()
+    movieSynopsis = movieSynopsis + movieSynopsisRemaining
+
+    contentRating = tdContentRating.get_text()
+    m = re.search('(.*)\s+\((.*)\).*',contentRating)
+    if m:
+        try: 
+            rating = m.group(1)
+            metaData['rating'] = rating
+        except: pass
+        try:
+            ratingNotes = m.group(2)
+            metaData['ratingNotes'] = ratingNotes
+        except: pass
+    metaData['tmeter_all'] = int(allCriticsRatingValue)
+    metaData['tmeter_top'] = int(topCriticsRatingValue)
+    metaData['criticConsensus'] = criticConsensus
+    metaData['synopsis'] = movieSynopsis
+    metaData['genres'] = ",".join([span.get_text() for span in spansGenre])
+    metaData['releasedate'] = tdDatePublished.get_text().strip()
+    metaData['studio'] = spanProductionCompany.get_text()
+    metaData['runtime'] = timeDuration['datetime']
+    
+    
+    return 'getMovieMetaDataRT.Succes',metaData
     
 
-
-    
-
-
-    # Movie info box
-    div_movie_info = soup.find("div",attrs={"class":"movie_info"})
-
-    # pull synopsis
-    synopsis = div_movie_info.find("p",attrs={"id":"movieSynopsis"}).find(text=True,recursive=False)
-    synopsis = synopsis 
-    if div_movie_info.find("p",attrs={"id":"movieSynopsis"}).find("span",attrs={"id":"movieSynopsisRemaining"}):
-        synopsis = synopsis \
-            + div_movie_info.find("p",attrs={"id":"movieSynopsis"}).find("span",attrs={"id":"movieSynopsisRemaining"}).get_text()
-        
-    # info box table
-    table_info = div_movie_info.find("table", attrs={"class":"info"})
-
-    # pull rating
-    rating = table_info.find("td",attrs={"itemprop":"contentRating"}).get_text()
-
-    # pull genre(s)
-    genre = []
-    spans_genre = table_info.findAll("span",attrs={"itemprop":"genre"})
-    for span in spans_genre:
-        genre.append(span.get_text())
 
     # pull director(s)
     td_director =  table_info.find("td",attrs={"itemprop":"director"})
@@ -173,17 +235,6 @@ def getMovieMetaDataRT(url):
         spans = td_director.findAll("span",attrs={"itemprop":"name"}) 
         for span in spans:  
             director.append(span.get_text())   
-
-    # pull release Date
-    td_datePublished = table_info.find("td",attrs={"itemprop":"datePublished"})
-    if td_datePublished: datePublished = table_info.find("td",attrs={"itemprop":"datePublished"}).get_text()
-    else: datePublished = ''
-
-    # pull production company
-    div_left_col = div_movie_info.find("div",attrs={"class":"left_col"})
-    div_productionCompany =  div_left_col.find("span",attrs={"itemprop":"productionCompany"})
-    if div_productionCompany: productionCompany = div_productionCompany.get_text()
-    else: productionCompany = ''
     
     # pull writer(s)
     writer = []
@@ -193,43 +244,9 @@ def getMovieMetaDataRT(url):
             for a in alinks:
                 writer.append(a.get_text())
             break
-    
-    time_duration =div_movie_info.find("time",attrs={"itemprop":"duration"})
-    if time_duration: runtime = time_duration['datetime']
-    else: time_duration = 'P00M'
 
-    print rating
-    print genre
-    print director
-    print writer
-    print runtime
-    print productionCompany
 
-    #try:
-    #    datePublished = soup.find('td', attrs={'itemprop':'datePublished'})['content']
-    #except (TypeError,KeyError):
-    #    datePublished = '0000-00-00'
-    #try:
-    #    tmeter_all = re.match(r"width:(.*)%",soup.findAll('div',attrs={'class':'progress-bar'})[0]['style']).group(1)
-    #    tmeter_top = re.match(r"width:(.*)%",soup.findAll('div',attrs={'class':'progress-bar'})[1]['style']).group(1)
-    #except (TypeError,KeyError):
-    #    tmeter='-1'
-    #try:
-    #    criticConsensus = soup.find('p',attrs={'class':'critic_consensus'}).get_text()
-    #except (TypeError,KeyError):
-    #    criticConsensus = 'None'
-    #try:
-    #    runtime = soup.find('time')['datetime']
-    #except (TypeError,KeyError):
-    #    runtime = 'P000M'
 
-    #metaData['datePublished'] = datePublished
-    #metaData['tmeter_all'] = tmeter_all
-    #metaData['tmeter_top'] = tmeter_top
-    #metaData['criticConsensus'] = criticConsensus
-    #metaData['runtime'] = runtime
-
-    return metaData
 
 
 def getMovieReviewDataRT(url):
