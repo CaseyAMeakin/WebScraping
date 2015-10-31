@@ -9,7 +9,7 @@ from nltk import word_tokenize
 def checkFind(item,itemName):
     if not item:
         errorCode = 'getMovieMetaDataRT.Error.' + itemName
-        return errorCode,{}
+        return (errorCode,{})
 
 def stripPunct(to_translate, translate_to=u''):
     not_letters_or_digits = u'!"#%\'()*+,-./:;<=>?@[\]^_`{|}~'
@@ -138,55 +138,72 @@ def getMovieMetaDataRT(url):
 
 
     divScorePanel = soup.find("div",attrs={"id":"scorePanel"})
-    checkFind(divScorePanel,'divScorePanel')
+    x = checkFind(divScorePanel,'divScorePanel')
+    if x:return x
 
     divTabContent = divScorePanel.find("div",attrs={"class":"tab-content"})
-    checkFind(divTabContent,'divTabContent')
+    x = checkFind(divTabContent,'divTabContent')
+    if x:returnx
 
     divAllCriticsNumbers = divTabContent.find("div",attrs={"id":"all-critics-numbers"})
-    checkFind(divAllCriticsNumbers,'divAllCriticsNumbers')
+    x = checkFind(divAllCriticsNumbers,'divAllCriticsNumbers')
+    if x:returnx
 
     spanAllCriticsRatingValue = divAllCriticsNumbers.find("span",attrs={"itemprop":"ratingValue"})
-    checkFind(spanAllCriticsRatingValue,'spanAllCriticsRatingValue')
+    x = checkFind(spanAllCriticsRatingValue,'spanAllCriticsRatingValue')
+    if x:returnx
 
     divTopCriticsNumbers = divTabContent.find("div",attrs={"id":"top-critics-numbers"})
-    checkFind(divTopCriticsNumbers,'divTopCriticsNumbers')
+    x = checkFind(divTopCriticsNumbers,'divTopCriticsNumbers')
+    if x:returnx
 
     spanTopCriticsRatingValue = divTopCriticsNumbers.find("span",attrs={"itemprop":"ratingValue"})
-    checkFind(spanTopCriticsRatingValue,'spanTopCriticsRatingValue')
+    x = checkFind(spanTopCriticsRatingValue,'spanTopCriticsRatingValue')
+    if x:returnx
     
     pCriticConsensus = divTopCriticsNumbers.find("p",attrs={"class":"critic_consensus"})
-    checkFind(pCriticConsensus,'pCriticConsensus')
+    x = checkFind(pCriticConsensus,'pCriticConsensus')
+    if x:returnx
 
     divMovieInfo = soup.find("div",attrs={"class":"movie_info"})
-    checkFind(divMovieInfo,'divMovieInfo')
+    x = checkFind(divMovieInfo,'divMovieInfo')
+    if x:returnx
     
     pMovieSynopsis = divMovieInfo.find("p",attrs={"id":"movieSynopsis"})
-    checkFind(pMovieSynopsis,'pMovieSynopsis')
+    x = checkFind(pMovieSynopsis,'pMovieSynopsis')
+    if x:returnx
 
     spanMovieSynopsisRemaining = pMovieSynopsis.find("span",attrs={"id":"movieSynopsisRemaining"})
-    checkFind(spanMovieSynopsisRemaining,'spanMovieSynopsisRemaining')
+    x = checkFind(spanMovieSynopsisRemaining,'spanMovieSynopsisRemaining')
+    if x:returnx
 
     tableMovieInfo = divMovieInfo.find("table")
-    checkFind(tableMovieInfo,'tableMovieInfo')
+    x = checkFind(tableMovieInfo,'tableMovieInfo')
+    if x:returnx
 
     tdContentRating = tableMovieInfo.find("td",attrs={"itemprop":"contentRating"})
-    checkFind(tdContentRating,'tdContentRating')
+    x = checkFind(tdContentRating,'tdContentRating')
+    if x:returnx
 
     spansGenre = tableMovieInfo.findAll("span",attrs={"itemprop":"genre"})
-    checkFind(spansGenre,'spansGenre')
+    x = checkFind(spansGenre,'spansGenre')
+    if x:returnx
 
     tdDatePublished = tableMovieInfo.find("td",attrs={"itemprop":"datePublished"})
-    checkFind(tdDatePublished,'tdDatePublished')
+    x = checkFind(tdDatePublished,'tdDatePublished')
+    if x:returnx
     
     tdDirector =  tableMovieInfo.find("td",attrs={"itemprop":"director"})
-    checkFind(tdDirector,'tdDirector')
+    x = checkFind(tdDirector,'tdDirector')
+    if x:returnx
 
     spanProductionCompany = divMovieInfo.find("span",attrs={"itemprop":"productionCompany"})
-    checkFind(spanProductionCompany,'spanProductionCompany')
+    x = checkFind(spanProductionCompany,'spanProductionCompany')
+    if x:returnx
 
     timeDuration =divMovieInfo.find("time",attrs={"itemprop":"duration"})
-    checkFind(timeDuration,'timeDuration')
+    x = checkFind(timeDuration,'timeDuration')
+    if x:returnx
 
 
     # Init metaData dictionary
