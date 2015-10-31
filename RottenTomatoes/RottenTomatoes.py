@@ -21,7 +21,7 @@ def getMovieURLRT(movie):
     """ 
     Returns the RT movie page URL by sending a simple query to the rottentomatoes website.
 
-    * Using the simple scheme below this subroutine returns ~90% of the titles correctly based on a
+    * Using this simple strategy this subroutine returns ~90% of the titles correctly based on a
     sample of ~3500 movie titles between the year 2000 and 2014 as listed on the film_in_year 
     pages on Wikipedia.  The majority of misses are due to the movie page not being the first 
     in the list for case 2 below: fixing this should result in ~98% correct hit rate.  About half
@@ -118,7 +118,10 @@ def getMovieURLRT(movie):
 
 
 def getMovieMetaDataRT(url):
-
+    """
+    
+    """
+    
     keys = ['datePublished',
             'tmeter_all',
             'tmeter_top',
@@ -127,20 +130,20 @@ def getMovieMetaDataRT(url):
             'Rating',
             'RatingNotes']
     metaData = {}
-    for key in keys:
-        metaData[key] = ''
+    for key in keys: metaData[key] = ''
     
-
-
-    if('queryRTError' in url):
-        return metaData
-
+    
     try:
         res = urllib2.urlopen(url)
     except (urllib2.URLError, urllib2.HTTPError):
-        return 'getMovieMetaDataRT.urlopen'
+        return 'getMovieMetaDataRT.urlopen', keys
     soup = bs(res.read(),'lxml')
     
+
+
+    
+
+
     # Movie info box
     div_movie_info = soup.find("div",attrs={"class":"movie_info"})
 
