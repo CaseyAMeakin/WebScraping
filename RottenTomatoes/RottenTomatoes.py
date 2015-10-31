@@ -21,6 +21,13 @@ def getMovieURLRT(movie):
     """ 
     Returns the RT movie page URL by sending a simple query to the rottentomatoes website.
 
+    * Using the simple scheme below this subroutine returns ~90% of the titles correctly based on a
+    sample of ~3500 movie titles between the year 2000 and 2014 as listed on the film_in_year 
+    pages on Wikipedia.  The majority of misses are due to the movie page not being the first 
+    in the list for case 2 below: fixing this should result in ~98% correct hit rate.  About half
+    of the remaining misses has to do with handling of special characters in the name, mostly 
+    the dash "-".
+
     Three classes of results from query:
     1. Query lands directly on movie page: identify by 
     Case identified by: The h1 heading in the "main_container" divider has class "title".
