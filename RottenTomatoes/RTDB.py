@@ -24,14 +24,6 @@ def connectDB(sqlite3_db_file_name):
     con = lite.connect(sqlite3_db_file_name)
     return con
 
-# Query rows: (cursor, table name, column name, row value)
-def getRows(con,tablename,condition):
-    cur = con.cursor()
-    sqlcmd = '''select * from ''' + tablename + " where " + condition
-    print sqlcmd
-    cur.execute(sqlcmd)
-    return cur.fetchall()
-
 
 # Insert Title and Year into table "movie"
 def populateTitleYear(con,movieList):
@@ -45,13 +37,7 @@ def populateTitleYear(con,movieList):
             print 'ERROR: ' + sqlcmd
     con.commit()
 
-def updateRTURL(con,movie,url):
-    cur = con.cursor()
-    sqlcmd = """update movies set rtmovieurl =  "{0}" where year = {1} and title = "{2}";""".format(url,movie[0],movie[1])
-    print sqlcmd
-    result = cur.execute(sqlcmd)
-    con.commit()
-
+# Update a string column for a given row
 def updateTableRowKeyValueString(con,table,rowid,key,stringValue):
     cur = con.cursor()
     sql_ = """update {0} set {1} =  "{2}" where rowid = {3};"""
@@ -60,6 +46,30 @@ def updateTableRowKeyValueString(con,table,rowid,key,stringValue):
     result = con.execute(sqlcmd)
     con.commit()
 
+
+"""
+Scrape RT URL for a movie and populate tables rows.
+This is specific to the "movies" sqlite3 table which has
+this schema:
+
+CREATE TABLE movies (
+title text,
+year int,
+releasedate text,
+rtmeterall int,
+rtmetertop int,
+criticconsensus text,
+runtime int,
+rating text,
+ratingnotes text,
+medium text default "",
+version text default "",
+genres text,
+studio text,
+synopsis text,
+rtmovieurl text,
+unique(title,year,medium,version));
+"""
 def populateRTURL(con,movieList,logfname="populateRTURL.log"):
     cur = con.cursor()
     sqlGetRowid_ = """select rowid from movies where year = {0} and title = "{1}";"""
