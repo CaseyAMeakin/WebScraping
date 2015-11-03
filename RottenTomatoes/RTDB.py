@@ -8,7 +8,13 @@ from datetime import *
 from RottenTomatoes import *
 import sqlite3 as lite
 
-# Populate list of movie data: [Array](year, title) 
+def escapeQuotes(string):
+    string = re.sub("\"","\"\"",string)
+    string = re.sub("\'","\'\'",string)
+    return string
+
+
+# Return list of movie data arrays, each like: [Array](year, title) 
 def readMovieList(movie_list_file):
     movie_list = open(movie_list_file)
     movies = []
@@ -19,13 +25,13 @@ def readMovieList(movie_list_file):
         movies.append((year,title))
     return movies
 
-# Connect to DB return cursor
+# Connect to DB, return connection
 def connectDB(sqlite3_db_file_name):
     con = lite.connect(sqlite3_db_file_name)
     return con
 
 
-# Insert Title and Year into table "movie"
+# Insert Title and Year into sqlite3 table "movie"
 def populateTitleYear(con,movieList):
     cur = con.cursor()
     sql_ =  """insert into movies (year, title) values ({0}, "{1}");"""
@@ -37,7 +43,7 @@ def populateTitleYear(con,movieList):
             print 'ERROR: ' + sqlcmd
     con.commit()
 
-# Update a string column for a given row
+# Update a string column for a given row in a sqlite3 database
 def updateTableRowKeyValueString(con,table,rowid,key,stringValue):
     cur = con.cursor()
     sql_ = """update {0} set {1} =  "{2}" where rowid = {3};"""
@@ -45,14 +51,6 @@ def updateTableRowKeyValueString(con,table,rowid,key,stringValue):
     
     result = con.execute(sqlcmd)
     con.commit()
-
-
-def insertRTMetaData(con,metaData):
-    """
-    Insert metaData into sqlite3 tables
-    """
-    
-    pass
 
 
 def populateRTMetaData(con,movieList,logfname="populateRTMetaData.log"):
@@ -72,7 +70,6 @@ def populateRTMetaData(con,movieList,logfname="populateRTMetaData.log"):
     sqlGetDirectorID_  = """select rowid from directors where peopleid = {0} and movieid = {1};"""
     sqlGetCharacterID_ = """select rowid from characters where peopleid = {0} and movieid = {1} and name = {2};"""
     
-
     for movie in movieList:
 
         sqlGetMovieData = sqlGetMovieData_.format(movie[0],movie[1])
@@ -82,25 +79,73 @@ def populateRTMetaData(con,movieList,logfname="populateRTMetaData.log"):
             msg = logmsg.format(datetime.now().isoformat(),sqlGetMovieData,"Success")
             logfile.write(msg+"\n")
             row = results[0]
-            movied,title,year,releasedate,rmeterall,rmeterrop,criticconcensus,runtime,rating, \
+            movieid,title,year,releasedate,rtmeterall,rtmetertop,criticconsensus,runtime,rating, \
                 ratingnotes,medium,version,genres,studio,synopsis,url = row
+            
             # Scrape Metadata from RT website
             (exitCode,metaData) = getMovieMetaDataRT(url)
             msg = logmsg.format(datetime.now().isoformat(),"getMovieMetaDataRT("+url+")",exitCode)
             logfile.write(msg+"\n")
-            print exitCode.lower()
+            
             if re.search(".*success.*",exitCode.lower()):
-                
-                #exitCode = insertRTMetaData(con,movieid,metaData)
-                #msg = logmsg.format(datetime.now().isoformat(),"insertRTMetaData(con,metaData)",exitCode)
-                #logfile.write(msg+"\n")
-                #print msg
-
                 # First, populate meta data in "movies" table
-                print releasedate
-                
-                
-                
+                vars = ["releasedate","rtmeterall","rtmetertop","criticconsensus","runtime","rating", \
+                            "ratingnotes","genres","studio","synopsis"]
+                varlist = [var for var in vars if not eval(var)]
+                for var in varlist:
+                    value = escapeQuotes(str(eval("""metaData['{0}']""".format(var))))
+                    sqlupdate = """update movies set {0} = '{1}' where rowid = {2};""".format(var,value,movieid)
+                    try: 
+                        cur.execute(sqlupdate)
+                    except:
+                        print 'ERROR: ' + sqlupdate
+                    con.commit()
+                    
+                # Populate people-related tables: people, actors, directors, writers, characters
+                sqlSelectRTUrlPeople_ = """select personid, rturl from people where rturl = "{0}";"""
+                sqlUpdateRTUrlPeople_ = """insert into people (credited,rturl) values ("{0}","{1}");"""
+                sqlSelectDirectors_ = """select * from directors where personid = {0} and movieid = {1};"""
+                sqlInsertDirectors_ = """insert into directors (personid,movieid) values ({0},{1});"""
+
+                for person in metaData['directors']:
+                    # query person in people table by rturl
+                    sqlcmd = sqlSelectRTUrlPeople_.format(person[1])
+                    try:results = con.execute(sqlcmd).fetchall()                    
+                    except: print 'ERROR: ' + sqlcmd
+                    # if not in db insert credited name and rturl and get back rowid
+                    if not results:
+                        credited = escapeQuotes(person[0])
+                        rturl = person[1]
+                        sqlcmd = sqlUpdateRTUrlPeople_.format(credited,rturl)
+                        print sqlcmd
+                        personid = None
+                        try:
+                            cur.execute(sqlcmd)
+                            personid = cur.lastworid
+                        except:
+                            print 'ERROR: ' + sqlcmd
+                        con.commit()
+                    else:
+                        row = results[0]
+                        personid = row[0]
+                    sqlcmd = sqlSelectDirectors_.format(personid,movieid)
+                    try: results = cur.execute(sqlcmd).fetchall()
+                    except: print 'ERROR: ' + sqlcmd
+                    if not results:
+                        sqlcmd = sqlInsertDirectors_.format(personid,movieid)
+                        print results
+                        print sqlcmd
+                        try: results = cur.execute(sqlcmd)
+                        except: print 'ERROR: '+ sqlcmd
+                    else:
+                        print results
+                        print "Director already exists in DB"
+                    con.commit()
+
+                #for person in metaData['actors']:
+                    
+
+
         else:
             msg= logmsg.format(datetime.now().isoformat(),sqlGetMovieData,"Error.noSqlResult")
             logfile.write(msg+"\n")
