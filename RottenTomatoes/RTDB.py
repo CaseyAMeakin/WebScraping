@@ -47,30 +47,30 @@ def updateTableRowKeyValueString(con,table,rowid,key,stringValue):
     con.commit()
 
 
-"""
-Scrape RT URL for a movie and populate tables rows.
-This is specific to the "movies" sqlite3 table which has
-this schema:
-
-CREATE TABLE movies (
-title text,
-year int,
-releasedate text,
-rtmeterall int,
-rtmetertop int,
-criticconsensus text,
-runtime int,
-rating text,
-ratingnotes text,
-medium text default "",
-version text default "",
-genres text,
-studio text,
-synopsis text,
-rtmovieurl text,
-unique(title,year,medium,version));
-"""
 def populateRTURL(con,movieList,logfname="populateRTURL.log"):
+    """                                                             
+    Scrape RT URL for a movie and populate tables rows.             
+    This is specific to the "movies" sqlite3 table which has        
+    this schema:                                                    
+    
+    CREATE TABLE movies (                                           
+    title text,                                                     
+    year int,                                                       
+    releasedate text,                                               
+    rtmeterall int,                                                 
+    rtmetertop int,                                                 
+    criticconsensus text,                                           
+    runtime int,                                                    
+    rating text,                                                    
+    ratingnotes text,                                               
+    medium text default "",                                         
+    version text default "",                                        
+    genres text,                                                    
+    studio text,                                                    
+    synopsis text,                                                  
+    rtmovieurl text,                                                
+    unique(title,year,medium,version));                             
+    """
     cur = con.cursor()
     sqlGetRowid_ = """select rowid from movies where year = {0} and title = "{1}";"""
     logfile = open(logfname,"a")
