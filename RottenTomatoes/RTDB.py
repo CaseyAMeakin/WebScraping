@@ -47,10 +47,68 @@ def updateTableRowKeyValueString(con,table,rowid,key,stringValue):
     con.commit()
 
 
+def insertRTMetaData(con,metaData):
+    """
+    Insert metaData into sqlite3 tables
+    """
+    
+    pass
+
+
+def populateRTMetaData(con,movieList,logfname="populateRTMetaData.log"):
+    """
+    Scrape RT URL for movie meta data.
+    Insert into sqlite3 tables.
+    """
+    logfile=open(logfname,"write")
+    logmsg = """[{0},{1},{2}]"""
+    
+    cur = con.cursor()
+    
+    # SQLite3 command templates
+    sqlGetMovieData_   = """select rowid,* from movies where year = {0} and title = "{1}";"""
+    sqlGetPersonID_    = """select rowid from people where rturl = {0};"""
+    sqlGetActorID_     = """select rowid from actors where peopleid = {0} and movieid = {1};"""
+    sqlGetDirectorID_  = """select rowid from directors where peopleid = {0} and movieid = {1};"""
+    sqlGetCharacterID_ = """select rowid from characters where peopleid = {0} and movieid = {1} and name = {2};"""
+    
+
+    for movie in movieList:
+
+        sqlGetMovieData = sqlGetMovieData_.format(movie[0],movie[1])
+        results = cur.execute(sqlGetMovieData).fetchall()
+
+        if results:
+            msg = logmsg.format(datetime.now().isoformat(),sqlGetMovieData,"Success")
+            logfile.write(msg+"\n")
+            row = results[0]
+            movied,title,year,releasedate,rmeterall,rmeterrop,criticconcensus,runtime,rating, \
+                ratingnotes,medium,version,genres,studio,synopsis,url = row
+            # Scrape Metadata from RT website
+            (exitCode,metaData) = getMovieMetaDataRT(url)
+            msg = logmsg.format(datetime.now().isoformat(),"getMovieMetaDataRT("+url+")",exitCode)
+            logfile.write(msg+"\n")
+            print exitCode.lower()
+            if re.search(".*success.*",exitCode.lower()):
+                
+                #exitCode = insertRTMetaData(con,movieid,metaData)
+                #msg = logmsg.format(datetime.now().isoformat(),"insertRTMetaData(con,metaData)",exitCode)
+                #logfile.write(msg+"\n")
+                #print msg
+
+                # First, populate meta data in "movies" table
+                print releasedate
+                
+                
+                
+        else:
+            msg= logmsg.format(datetime.now().isoformat(),sqlGetMovieData,"Error.noSqlResult")
+            logfile.write(msg+"\n")
+
 def populateRTURL(con,movieList,logfname="populateRTURL.log"):
     """                                                             
     Scrape RT URL for a movie and populate tables rows.             
-    This is specific to the "movies" sqlite3 table which has        
+    This is specific to a sqlite3 table which has        
     this schema:                                                    
     
     CREATE TABLE movies (                                           
@@ -71,11 +129,12 @@ def populateRTURL(con,movieList,logfname="populateRTURL.log"):
     rtmovieurl text,                                                
     unique(title,year,medium,version));                             
     """
+    logfile = open(logfname,"a")
     cur = con.cursor()
     sqlGetRowid_ = """select rowid from movies where year = {0} and title = "{1}";"""
-    logfile = open(logfname,"a")
 
     for movie in movieList:
+        # Get rowid for movie with given title and year
         sqlGetRowid = sqlGetRowid_.format(movie[0],movie[1])
         rowid_ = cur.execute(sqlGetRowid).fetchall()
         if len(rowid_) != 1:
@@ -89,9 +148,12 @@ def populateRTURL(con,movieList,logfname="populateRTURL.log"):
         except:
             msg = "{0}\t{1}\t{2}\t{3}" \
                 .format(movie[0],movie[1],'populateRTURL.Error.rowid',datetime.now().isoformat())
-            
+    
+        # Scrape URL from RT website
         result = getMovieURLRT(movie)
-        url = result[2]
+        url = result[2]        
+
+        # Add URL data to sqlite3 table
         if "error" not in url.lower():
             try:
                 updateTableRowKeyValueString(con,"movies",rowid,"rtmovieurl",url)
@@ -104,3 +166,4 @@ def populateRTURL(con,movieList,logfname="populateRTURL.log"):
         msg = "{0}\t{1}\t{2}\t{3}".format(result[0],result[1],result[2],datetime.now().isoformat())
         print msg
         logfile.write(msg+"\n")
+
