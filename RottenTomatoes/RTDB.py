@@ -9,10 +9,9 @@ from RottenTomatoes import *
 import sqlite3 as lite
 
 def escapeQuotes(string):
-    string = re.sub("\"","\"\"",string)
-    string = re.sub("\'","\'\'",string)
+    string = re.sub(u"\"",u"\"\"",unicode(string))
+    string = re.sub(u"\'",u"\'\'",unicode(string))
     return string
-
 
 # Return list of movie data arrays, each like: [Array](year, title) 
 def readMovieList(movie_list_file):
@@ -34,7 +33,7 @@ def connectDB(sqlite3_db_file_name):
 # Update a string column for a given row in a sqlite3 database
 def updateTableRowKeyValueString(con,table,rowid,key,stringValue):
     cur = con.cursor()
-    sql_ = """update {0} set {1} =  "{2}" where rowid = {3};"""
+    sql_ = u"""update {0} set {1} =  "{2}" where rowid = {3};"""
     sqlcmd = sql_.format(table,key,stringValue,rowid)    
     try:
         results = cur.execute(sqlcmd).fetchall()
@@ -53,7 +52,7 @@ def trySqlcmdFetchall(con,sqlcmd,logfile=None,quiet=True,logging=False):
     except:
         results = None
         statCode = 'Error'
-    logmsg = """[{0},{1},{2}]"""
+    logmsg = u"""[{0},{1},{2}]"""
     msg = logmsg.format(datetime.now().isoformat(),sqlcmd,statCode)
     if(logging): logfile.write(msg+"\n")
     if(not quiet): print msg
@@ -69,7 +68,7 @@ def trySqlcmdCommit(con,sqlcmd,logfile=None,quiet=True,logging=False):
     except:
         if(not quiet): print 'ERROR: ' + sqlcmd
         statCode = 'Error'
-    logmsg = """[{0},{1},{2}]"""
+    logmsg = u"""[{0},{1},{2}]"""
     msg = logmsg.format(datetime.now().isoformat(),sqlcmd,statCode)
     if(logging): logfile.write(msg+"\n")
     if(not quiet): print msg
@@ -81,8 +80,8 @@ def updateMovieMetaDataRTDB(con,movieid,metaData,logfile=None,logging=False,quie
     Scrape RT URL for movie meta data.
     Insert into sqlite3 tables.
     """
-    sqlGetMovieData_   = """select * from movies where rowid = {0};"""
-    sqlUpdateMoviesKV_ = """update movies set {0} = '{1}' where rowid = {2};"""
+    sqlGetMovieData_   = u"""select * from movies where rowid = {0};"""
+    sqlUpdateMoviesKV_ = u"""update movies set {0} = '{1}' where rowid = {2};"""
 
     sqlcmd = sqlGetMovieData_.format(movieid)
     results = trySqlcmdFetchall(con,sqlcmd)
@@ -96,7 +95,8 @@ def updateMovieMetaDataRTDB(con,movieid,metaData,logfile=None,logging=False,quie
                 "ratingnotes","genres","studio","synopsis"]
     varlist = [var for var in vars if not eval(var)]
     for var in varlist:
-        value = escapeQuotes(str(eval("""metaData['{0}']""".format(var))))
+        value = escapeQuotes(unicode(eval(u"""metaData['{0}']""".format(var))))
+        
         sqlcmd = sqlUpdateMoviesKV_.format(var,value,movieid)
         trySqlcmdCommit(con,sqlcmd)
 
@@ -114,8 +114,8 @@ def updateMovieMetaDataRTDB(con,movieid,metaData,logfile=None,logging=False,quie
 def updatePersonRTDB(con,credited,rturl):
     """
     """
-    sqlSelectRTUrlPeople_ = """select personid, rturl from people where rturl = "{0}";"""
-    sqlUpdateRTUrlPeople_ = """insert into people (credited,rturl) values ("{0}","{1}");"""
+    sqlSelectRTUrlPeople_ = u"""select personid, rturl from people where rturl = "{0}";"""
+    sqlUpdateRTUrlPeople_ = u"""insert into people (credited,rturl) values ("{0}","{1}");"""
 
     sqlcmd = sqlSelectRTUrlPeople_.format(rturl)
     results = trySqlcmdFetchall(con,sqlcmd)
@@ -129,8 +129,8 @@ def updatePersonRTDB(con,credited,rturl):
 def updateDirectorRTDB(con,movieid,director):
     """
     """
-    sqlSelectDirectors_ = """select * from directors where personid = {0} and movieid = {1};"""
-    sqlInsertDirectors_ = """insert into directors (personid,movieid) values ({0},{1});"""
+    sqlSelectDirectors_ = u"""select * from directors where personid = {0} and movieid = {1};"""
+    sqlInsertDirectors_ = u"""insert into directors (personid,movieid) values ({0},{1});"""
 
     credited = escapeQuotes(director[0])
     rturl = director[1]
@@ -147,8 +147,8 @@ def updateDirectorRTDB(con,movieid,director):
 def updateWritersRTDB(con,movieid,writer):
     """
     """
-    sqlSelectWriters_ = """select * from writers where personid = {0} and movieid = {1};"""
-    sqlInsertWriters_ = """insert into writers (personid,movieid) values ({0},{1});"""
+    sqlSelectWriters_ = u"""select * from writers where personid = {0} and movieid = {1};"""
+    sqlInsertWriters_ = u"""insert into writers (personid,movieid) values ({0},{1});"""
     
     credited = escapeQuotes(writer[0])
     rturl    = writer[1]
@@ -165,10 +165,10 @@ def updateWritersRTDB(con,movieid,writer):
 def updateActorAndCharacterRTDB(con,movieid,actor):
     """
     """
-    sqlSelectActors_ = """select * from actors where personid = {0} and movieid = {1};"""
-    sqlInsertActors_ = """insert into actors (personid,movieid) values ({0},{1});"""
-    sqlSelectChar_ = """select * from characters where actorid = {0} and movieid = {1} and name = "{2}";"""
-    sqlInsertChar_ = """insert into characters (actorid,movieid,name) values ({0},{1},"{2}");"""
+    sqlSelectActors_ = u"""select * from actors where personid = {0} and movieid = {1};"""
+    sqlInsertActors_ = u"""insert into actors (personid,movieid) values ({0},{1});"""
+    sqlSelectChar_ = u"""select * from characters where actorid = {0} and movieid = {1} and name = "{2}";"""
+    sqlInsertChar_ = u"""insert into characters (actorid,movieid,name) values ({0},{1},"{2}");"""
 
     credited = escapeQuotes(actor[0])
     rturl = actor[1]
@@ -193,26 +193,36 @@ def updateActorAndCharacterRTDB(con,movieid,actor):
         rowid = trySqlcmdCommit(con,sqlcmd)
 
 
+def getMovieURLAndIdFromDB(con,movie):
+    sqlGetMovieInfo_ = u"""select rowid,rtmovieurl from movies where year="{0}" and title ="{1}";"""
+    sqlcmd = sqlGetMovieInfo_.format(movie[0],movie[1])
+    results = trySqlcmdFetchall(con,sqlcmd,quiet=False)[0]
+    if not results:
+        print 'Error'
+        return None
+    movieid,url = results
+    return (movieid,url)
 
 
 def populateMovieMetaData(con,movie):
-    
-    sqlGetMovieInfo_ = """select rowid,rtmovieurl from movies where year="{0}" and title ="{1}";"""
-    sqlcmd = sqlGetMovieInfo_.format(movie[0],movie[1])
-    results = trySqlcmdFetchall(con,sqlcmd,quiet=False)[0]
-    
-    if not results:
-        print 'Error'
+
+    result = getMovieURLAndIdFromDB(con,movie)
+    if result: 
+        movieid,url = result
+        if not url:
+            print 'Error: getMovieURLAndIdFromDB'
+            return
+    else:
+        print 'Error: getMovieURLAndIdFromDB'
         return
 
-    movieid,url = results
-    (exitCode,metaData) = getMovieMetaDataRT(url)
-    if re.search(".*error.*",exitCode.lower()):
+    result = getMovieMetaDataRT(url)
+    if result:
+        exitCode,metaData = result
+    else:
         print 'Error.getMovieMetaDataRT'
         return
-
     updateMovieMetaDataRTDB(con,movieid,metaData)
-    
 
 def populateTitleYear(con,movieList):                                      
     cur = con.cursor()                                                     
@@ -227,32 +237,11 @@ def populateTitleYear(con,movieList):
 
 
 def populateRTURL(con,movieList,logfname="populateRTURL.log"):
-    """                                                             
-    Scrape RT URL for a movie and populate tables rows.             
-    This is specific to a sqlite3 table which has        
-    this schema:                                                    
-    
-    CREATE TABLE movies (                                           
-    title text,                                                     
-    year int,                                                       
-    releasedate text,                                               
-    rtmeterall int,                                                 
-    rtmetertop int,                                                 
-    criticconsensus text,                                           
-    runtime int,                                                    
-    rating text,                                                    
-    ratingnotes text,                                               
-    medium text default "",                                         
-    version text default "",                                        
-    genres text,                                                    
-    studio text,                                                    
-    synopsis text,                                                  
-    rtmovieurl text,                                                
-    unique(title,year,medium,version));                             
+    """
     """
     logfile = open(logfname,"a")
     cur = con.cursor()
-    sqlGetRowid_ = """select rowid from movies where year = {0} and title = "{1}";"""
+    sqlGetRowid_ = u"""select rowid from movies where year = {0} and title = "{1}";"""
 
     for movie in movieList:
         # Get rowid for movie with given title and year

@@ -6,10 +6,10 @@ import bs4
 from nltk import word_tokenize
 from datetime import *
 
-def checkFind(item,itemName,logfile=None,logging=False):
+def checkFind(item,itemName,logfile=None,logging=False,quiet=False):
     if not item:
         logmsg = """[{0},{1},{2}]"""
-        msg = logmsg.format(datetime.now().isoformat(),'getMovieMetaDataRT','Error')
+        msg = logmsg.format(datetime.now().isoformat(),'getMovieMetaDataRT.'+itemName,'Error')
         if(logging):
             logfile.write(msg + "\n")
         if(not quiet):
@@ -169,10 +169,10 @@ def getMovieMetaDataRT(url,logfile=None,logging=False,quiet=True):
     if x:return x
 
     spanTopCriticsRatingValue = divTopCriticsNumbers.find("span",attrs={"itemprop":"ratingValue"})
-    x = checkFind(spanTopCriticsRatingValue,'spanTopCriticsRatingValue')
-    if x:return x
+    #x = checkFind(spanTopCriticsRatingValue,'spanTopCriticsRatingValue')
+    #if x:return x
     
-    pCriticConsensus = divTopCriticsNumbers.find("p",attrs={"class":"critic_consensus"})
+    pCriticConsensus = divAllCriticsNumbers.find("p",attrs={"class":"critic_consensus"})
     x = checkFind(pCriticConsensus,'pCriticConsensus')
     if x:return x
 
@@ -227,7 +227,8 @@ def getMovieMetaDataRT(url,logfile=None,logging=False,quiet=True):
     # Parse elements pulled from page, add to dictionary
 
     allCriticsRatingValue = spanAllCriticsRatingValue.get_text()
-    topCriticsRatingValue = spanTopCriticsRatingValue.get_text()
+    if spanTopCriticsRatingValue: topCriticsRatingValue = spanTopCriticsRatingValue.get_text()
+    else: topCriticsRatingValue = -1
     criticConsensus = get_parent_text(pCriticConsensus)
     movieSynopsis = get_parent_text(pMovieSynopsis)
     if spanMovieSynopsisRemaining: 
@@ -245,6 +246,9 @@ def getMovieMetaDataRT(url,logfile=None,logging=False,quiet=True):
             ratingNotes = m.group(2)
             metaData['ratingnotes'] = ratingNotes
         except: pass
+    else:
+        metaData['rating'] = contentRating
+        metaData['ratingnotes'] = ''
     metaData['rtmeterall'] = int(allCriticsRatingValue)
     metaData['rtmetertop'] = int(topCriticsRatingValue)
     metaData['criticconsensus'] = criticConsensus
@@ -254,6 +258,8 @@ def getMovieMetaDataRT(url,logfile=None,logging=False,quiet=True):
     metaData['studio'] = spanProductionCompany.get_text()
     metaData['runtime'] = timeDuration['datetime']
     
+
+
     # Get list of people involved in the movie and their jobs
 
     # Writers
@@ -311,7 +317,7 @@ def getMovieMetaDataRT(url,logfile=None,logging=False,quiet=True):
     metaData['directors'] = directors
 
     # return data
-    logmsg = """[{0},{1},{2}]"""
+    logmsg = u"""[{0},{1},{2}]"""
     msg = logmsg.format(datetime.now().isoformat(),'getMovieMetaDataRT','Success')
     if(logging):
         logfile.write(msg + "\n")
