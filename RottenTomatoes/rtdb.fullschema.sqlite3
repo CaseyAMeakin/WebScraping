@@ -1,0 +1,48 @@
+CREATE TABLE movies (
+title text,
+year int,
+releasedate text,
+rtmeterall int,
+rtmetertop int,
+criticconsensus text,
+runtime int,
+rating text,
+ratingnotes text,
+medium text default "",
+version text default "",
+genres text,
+studio text,
+synopsis text,
+rtmovieurl text,
+unique(title,year,medium,version));
+CREATE TABLE people(
+ personid INTEGER primary key asc,
+ credited text,
+ first text,
+ middle text,
+ last text,
+ other text,
+ akas text,
+ notes text,
+ dob text,
+ gender text,
+ rturl text default "",
+ wkurl text default "",
+ unique(rturl,wkurl));
+CREATE TABLE actors(
+personid int,
+movieid int,
+unique(personid,movieid));
+CREATE TABLE directors (
+personid int,
+movieid int,
+unique(personid,movieid));
+CREATE TABLE characters (
+actorid int,
+movieid int,
+name text,
+unique(actorid,movieid,name));
+CREATE TABLE writers(
+personid int,
+movieid int,
+unique(personid,movieid));
