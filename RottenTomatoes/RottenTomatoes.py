@@ -4,12 +4,17 @@ import urllib2
 from bs4 import BeautifulSoup as bs
 import bs4
 from nltk import word_tokenize
+from datetime import *
 
-
-def checkFind(errorCodeRoot,item,itemName):
+def checkFind(item,itemName,logfile=None,logging=False):
     if not item:
-        errorCode = ".".join([errorCodeRoot,itemName])
-        return (errorCode,{})
+        logmsg = """[{0},{1},{2}]"""
+        msg = logmsg.format(datetime.now().isoformat(),'getMovieMetaDataRT','Error')
+        if(logging):
+            logfile.write(msg + "\n")
+        if(not quiet):
+            print msg
+        return ('Error',{})
 
 def stripPunct(to_translate, translate_to=u''):
     not_letters_or_digits = u'!"#%\'()*+,-./:;<=>?@[\]^_`{|}~'
@@ -29,7 +34,7 @@ def getMovieURLRT(movie):
     """ 
     Returns the RT movie page URL by sending a simple query to the rottentomatoes website.
 
-    RT uses some of the Schema's from schema.org which make parsing easier by querying
+    RT uses some of the Schemas from schema.org which make parsing easier by querying
     itemscope and itempropr, for example.
 
     * Using this simple strategy the subroutine returns ~90% of the titles correctly based on a
@@ -130,11 +135,11 @@ def getMovieURLRT(movie):
     return (movie[0],movie[1],'getMovieURLRT.Error.NoResults')
 
 
-def getMovieMetaDataRT(url):
+def getMovieMetaDataRT(url,logfile=None,logging=False,quiet=True):
     """
-    
+    Scrape movie meta data from the RT site, return in a dictionary
+    data structure.
     """
-    _ErrorCode = ''
     base_url = 'http://www.rottentomatoes.com'
 
     try:
@@ -143,84 +148,81 @@ def getMovieMetaDataRT(url):
         return 'getMovieMetaDataRT.Error.urlopen', {}
     soup = bs(res.read(),'lxml')
 
-
     divScorePanel = soup.find("div",attrs={"id":"scorePanel"})
-    x = checkFind(_ErrorCode,divScorePanel,'divScorePanel')
+    x = checkFind(divScorePanel,'divScorePanel')
     if x:return x
 
     divTabContent = divScorePanel.find("div",attrs={"class":"tab-content"})
-    x = checkFind(_ErrorCode,divTabContent,'divTabContent')
+    x = checkFind(divTabContent,'divTabContent')
     if x:return x
 
     divAllCriticsNumbers = divTabContent.find("div",attrs={"id":"all-critics-numbers"})
-    x = checkFind(_ErrorCode,divAllCriticsNumbers,'divAllCriticsNumbers')
+    x = checkFind(divAllCriticsNumbers,'divAllCriticsNumbers')
     if x:return x
 
     spanAllCriticsRatingValue = divAllCriticsNumbers.find("span",attrs={"itemprop":"ratingValue"})
-    x = checkFind(_ErrorCode,spanAllCriticsRatingValue,'spanAllCriticsRatingValue')
+    x = checkFind(spanAllCriticsRatingValue,'spanAllCriticsRatingValue')
     if x:return x
 
     divTopCriticsNumbers = divTabContent.find("div",attrs={"id":"top-critics-numbers"})
-    x = checkFind(_ErrorCode,divTopCriticsNumbers,'divTopCriticsNumbers')
+    x = checkFind(divTopCriticsNumbers,'divTopCriticsNumbers')
     if x:return x
 
     spanTopCriticsRatingValue = divTopCriticsNumbers.find("span",attrs={"itemprop":"ratingValue"})
-    x = checkFind(_ErrorCode,spanTopCriticsRatingValue,'spanTopCriticsRatingValue')
+    x = checkFind(spanTopCriticsRatingValue,'spanTopCriticsRatingValue')
     if x:return x
     
     pCriticConsensus = divTopCriticsNumbers.find("p",attrs={"class":"critic_consensus"})
-    x = checkFind(_ErrorCode,pCriticConsensus,'pCriticConsensus')
+    x = checkFind(pCriticConsensus,'pCriticConsensus')
     if x:return x
 
     divMovieInfo = soup.find("div",attrs={"class":"movie_info"})
-    x = checkFind(_ErrorCode,divMovieInfo,'divMovieInfo')
+    x = checkFind(divMovieInfo,'divMovieInfo')
     if x:return x
     
     pMovieSynopsis = divMovieInfo.find("p",attrs={"id":"movieSynopsis"})
-    x = checkFind(_ErrorCode,pMovieSynopsis,'pMovieSynopsis')
+    x = checkFind(pMovieSynopsis,'pMovieSynopsis')
     if x:return x
 
     spanMovieSynopsisRemaining = pMovieSynopsis.find("span",attrs={"id":"movieSynopsisRemaining"})
-    x = checkFind(_ErrorCode,spanMovieSynopsisRemaining,'spanMovieSynopsisRemaining')
-    if x:return x
+    #x = checkFind(spanMovieSynopsisRemaining,'spanMovieSynopsisRemaining')
+    #if x:return x
 
     tableMovieInfo = divMovieInfo.find("table")
-    x = checkFind(_ErrorCode,tableMovieInfo,'tableMovieInfo')
+    x = checkFind(tableMovieInfo,'tableMovieInfo')
     if x:return x
 
     tdContentRating = tableMovieInfo.find("td",attrs={"itemprop":"contentRating"})
-    x = checkFind(_ErrorCode,tdContentRating,'tdContentRating')
+    x = checkFind(tdContentRating,'tdContentRating')
     if x:return x
 
     spansGenre = tableMovieInfo.findAll("span",attrs={"itemprop":"genre"})
-    x = checkFind(_ErrorCode,spansGenre,'spansGenre')
+    x = checkFind(spansGenre,'spansGenre')
     if x:return x
 
     dataDirector = tableMovieInfo.find("td",attrs={"itemprop":"director"})
-    x = checkFind(_ErrorCode,dataDirector,'dataDirector')
+    x = checkFind(dataDirector,'dataDirector')
     if x:return x
 
     tdDatePublished = tableMovieInfo.find("td",attrs={"itemprop":"datePublished"})
-    x = checkFind(_ErrorCode,tdDatePublished,'tdDatePublished')
+    x = checkFind(tdDatePublished,'tdDatePublished')
     if x:return x
     
     tdDirector =  tableMovieInfo.find("td",attrs={"itemprop":"director"})
-    x = checkFind(_ErrorCode,tdDirector,'tdDirector')
+    x = checkFind(tdDirector,'tdDirector')
     if x:return x
 
     spanProductionCompany = divMovieInfo.find("span",attrs={"itemprop":"productionCompany"})
-    x = checkFind(_ErrorCode,spanProductionCompany,'spanProductionCompany')
+    x = checkFind(spanProductionCompany,'spanProductionCompany')
     if x:return x
 
     timeDuration =divMovieInfo.find("time",attrs={"itemprop":"duration"})
-    x = checkFind(_ErrorCode,timeDuration,'timeDuration')
+    x = checkFind(timeDuration,'timeDuration')
     if x:return x
-
 
     # Init metaData dictionary
 
     metaData = {}
-
 
     # Parse elements pulled from page, add to dictionary
 
@@ -228,8 +230,9 @@ def getMovieMetaDataRT(url):
     topCriticsRatingValue = spanTopCriticsRatingValue.get_text()
     criticConsensus = get_parent_text(pCriticConsensus)
     movieSynopsis = get_parent_text(pMovieSynopsis)
-    movieSynopsisRemaining = spanMovieSynopsisRemaining.get_text()
-    movieSynopsis = movieSynopsis + movieSynopsisRemaining
+    if spanMovieSynopsisRemaining: 
+        movieSynopsisRemaining = spanMovieSynopsisRemaining.get_text()
+        movieSynopsis = movieSynopsis + movieSynopsisRemaining
 
     contentRating = tdContentRating.get_text()
     m = re.search('(.*)\s+\((.*)\).*',contentRating)
@@ -240,18 +243,17 @@ def getMovieMetaDataRT(url):
         except: pass
         try:
             ratingNotes = m.group(2)
-            metaData['ratingNotes'] = ratingNotes
+            metaData['ratingnotes'] = ratingNotes
         except: pass
-    metaData['tmeter_all'] = int(allCriticsRatingValue)
-    metaData['tmeter_top'] = int(topCriticsRatingValue)
-    metaData['criticConsensus'] = criticConsensus
+    metaData['rtmeterall'] = int(allCriticsRatingValue)
+    metaData['rtmetertop'] = int(topCriticsRatingValue)
+    metaData['criticconsensus'] = criticConsensus
     metaData['synopsis'] = movieSynopsis
     metaData['genres'] = ",".join([span.get_text() for span in spansGenre])
     metaData['releasedate'] = tdDatePublished.get_text().strip()
     metaData['studio'] = spanProductionCompany.get_text()
     metaData['runtime'] = timeDuration['datetime']
     
-
     # Get list of people involved in the movie and their jobs
 
     # Writers
@@ -265,10 +267,10 @@ def getMovieMetaDataRT(url):
                 writers.append([a.get_text().strip(),base_url+a['href']])
 
     metaData['writers'] = writers
-    
+
     # Actors and Directors
     people = soup.find_all(attrs={"itemtype":"http://schema.org/Person"})
-    x = checkFind(_ErrorCode,people,"people")
+    x = checkFind(people,'people')
     if x:return x
     
     directors = []
@@ -276,7 +278,7 @@ def getMovieMetaDataRT(url):
 
     for person in people: 
         nameItems = person.findAll(attrs={"itemprop":"name"})
-        checkFind(_ErrorCode,nameItems,"nameItems")
+        checkFind(nameItems,'nameItems')
         job = person['itemprop'] 
                 
         for nameItem in nameItems:
@@ -297,19 +299,25 @@ def getMovieMetaDataRT(url):
                 else: name = nameItem.get_text().strip()
                 role = ""
                 spanRole = person.find("span",attrs={"class":"characters"})
-                if spanRole: 
-                    m = re.search("as (.*)",spanRole.get_text())
-                    if m: role = m.group(1).strip()
-                actors.append([name,role,rt_url])
+                if spanRole:
+                    if spanRole.has_attr('title'):
+                        role = spanRole['title'].strip()
+                    else:
+                        m = re.search("as (.*)",spanRole.get_text())
+                        if m: role = m.group(1).strip()
+                actors.append([name,rt_url,role])
 
     metaData['actors'] = actors
     metaData['directors'] = directors
 
-
     # return data
-    return ('getMovieMetaDataRT.Succes',metaData)
-    
-
+    logmsg = """[{0},{1},{2}]"""
+    msg = logmsg.format(datetime.now().isoformat(),'getMovieMetaDataRT','Success')
+    if(logging):
+        logfile.write(msg + "\n")
+    if(not quiet):
+        print msg
+    return ('Success',metaData)
 
 
 def getMovieReviewDataRT(url):
