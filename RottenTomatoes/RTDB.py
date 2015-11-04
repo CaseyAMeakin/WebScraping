@@ -111,9 +111,21 @@ def updateMovieMetaDataRTDB(con,movieid,metaData,logfile=None,logging=False,quie
         value = escapeQuotes(str(eval("""metaData['{0}']""".format(var))))
         sqlcmd = sqlUpdateMoviesKV_.format(var,value,movieid)
         trySqlcmdCommit(con,sqlcmd)
-    
 
-def updatePersonRT(con,credited,rturl):
+
+    for director in metaData['directors']:
+        updateDirectorRTDB(con,movieid,director)
+    
+    for writer in metaData['writers']:
+        updateWritersRTDB(con,movieid,writer)
+        
+    for actor in metaData['actors']:
+        print actor
+        updateActorAndCharacterRTDB(con,movieid,actor)
+
+
+
+def updatePersonRTDB(con,credited,rturl):
     """
     """
     sqlSelectRTUrlPeople_ = """select personid, rturl from people where rturl = "{0}";"""
@@ -134,9 +146,9 @@ def updateDirectorRTDB(con,movieid,director):
     sqlSelectDirectors_ = """select * from directors where personid = {0} and movieid = {1};"""
     sqlInsertDirectors_ = """insert into directors (personid,movieid) values ({0},{1});"""
 
-    credited = director[0]
+    credited = escapeQuotes(director[0])
     rturl = director[1]
-    personid = updatePersonRT(con,credited,rturl)
+    personid = updatePersonRTDB(con,credited,rturl)
 
     sqlcmd = sqlSelectDirectors_.format(personid,movieid)
     results = trySqlcmdFetchall(con,sqlcmd)
@@ -152,9 +164,9 @@ def updateWritersRTDB(con,movieid,writer):
     sqlSelectWriters_ = """select * from writers where personid = {0} and movieid = {1};"""
     sqlInsertWriters_ = """insert into writers (personid,movieid) values ({0},{1});"""
     
-    credited = writer[0]
+    credited = escapeQuotes(writer[0])
     rturl    = writer[1]
-    personid = updatePersonRT(con,credited,rturl)
+    personid = updatePersonRTDB(con,credited,rturl)
         
     sqlcmd = sqlSelectWriters_.format(personid,movieid)
     results = trySqlcmdFetchall(con,sqlcmd)
@@ -164,15 +176,17 @@ def updateWritersRTDB(con,movieid,writer):
         rowid = trySqlcmdCommit(con,sqlcmd)
 
 
-def updateActorRTDB(con,movieid,actor):
+def updateActorAndCharacterRTDB(con,movieid,actor):
     """
     """
     sqlSelectActors_ = """select * from actors where personid = {0} and movieid = {1};"""
     sqlInsertActors_ = """insert into actors (personid,movieid) values ({0},{1});"""
+    sqlSelectChar_ = """select * from characters where actorid = {0} and movieid = {1} and name = "{2}";"""
+    sqlInsertChar_ = """insert into characters (actorid,movieid,name) values ({0},{1},"{2}");"""
 
-    credited = actor[0]
+    credited = escapeQuotes(actor[0])
     rturl = actor[1]
-    personid = updatePersonRT(con,credited,rturl)
+    personid = updatePersonRTDB(con,credited,rturl)
 
     sqlcmd = sqlSelectActors_.format(personid,movieid)
     results = trySqlcmdFetchall(con,sqlcmd)
@@ -181,10 +195,16 @@ def updateActorRTDB(con,movieid,actor):
         sqlcmd = sqlInsertActors_.format(personid,movieid)
         rowid = trySqlcmdCommit(con,sqlcmd)
 
-
-
-
-
+    name = escapeQuotes(actor[2])
+    if not name:
+        print "Character name not available"
+        return
+    sqlcmd = sqlSelectChar_.format(personid,movieid,name)
+    results = trySqlcmdFetchall(con,sqlcmd)
+    if results: print "Character already exist in DB"
+    else:
+        sqlcmd = sqlInsertChar_.format(personid,movieid,name)
+        rowid = trySqlcmdCommit(con,sqlcmd)
 
 
 
