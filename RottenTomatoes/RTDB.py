@@ -30,18 +30,6 @@ def connectDB(sqlite3_db_file_name):
     con = lite.connect(sqlite3_db_file_name)
     return con
 
-# Insert Title and Year into sqlite3 table "movie"
-def populateTitleYear(con,movieList):
-    cur = con.cursor()
-    sql_ =  """insert into movies (year, title) values ({0}, "{1}");"""
-    for movie in movieList:
-        sqlcmd = sql_.format(movie[0],movie[1])
-        try:
-            result = cur.execute(sqlcmd)
-        except:
-            print 'ERROR: ' + sqlcmd
-    con.commit()
-
 
 # Update a string column for a given row in a sqlite3 database
 def updateTableRowKeyValueString(con,table,rowid,key,stringValue):
@@ -120,9 +108,7 @@ def updateMovieMetaDataRTDB(con,movieid,metaData,logfile=None,logging=False,quie
         updateWritersRTDB(con,movieid,writer)
         
     for actor in metaData['actors']:
-        print actor
         updateActorAndCharacterRTDB(con,movieid,actor)
-
 
 
 def updatePersonRTDB(con,credited,rturl):
@@ -206,6 +192,38 @@ def updateActorAndCharacterRTDB(con,movieid,actor):
         sqlcmd = sqlInsertChar_.format(personid,movieid,name)
         rowid = trySqlcmdCommit(con,sqlcmd)
 
+
+
+
+def populateMovieMetaData(con,movie):
+    
+    sqlGetMovieInfo_ = """select rowid,rtmovieurl from movies where year="{0}" and title ="{1}";"""
+    sqlcmd = sqlGetMovieInfo_.format(movie[0],movie[1])
+    results = trySqlcmdFetchall(con,sqlcmd,quiet=False)[0]
+    
+    if not results:
+        print 'Error'
+        return
+
+    movieid,url = results
+    (exitCode,metaData) = getMovieMetaDataRT(url)
+    if re.search(".*error.*",exitCode.lower()):
+        print 'Error.getMovieMetaDataRT'
+        return
+
+    updateMovieMetaDataRTDB(con,movieid,metaData)
+    
+
+def populateTitleYear(con,movieList):                                      
+    cur = con.cursor()                                                     
+    sql_ =  """insert into movies (year, title) values ({0}, "{1}");"""    
+    for movie in movieList:                                                
+        sqlcmd = sql_.format(movie[0],movie[1])                            
+        try:                                                               
+            result = cur.execute(sqlcmd)                                   
+        except:                                                            
+            print 'ERROR: ' + sqlcmd                                       
+    con.commit()                                                           
 
 
 def populateRTURL(con,movieList,logfname="populateRTURL.log"):
