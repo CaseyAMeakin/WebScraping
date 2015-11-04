@@ -93,13 +93,7 @@ def updateMovieMetaDataRTDB(con,movieid,metaData,logfile=None,logging=False,quie
     Scrape RT URL for movie meta data.
     Insert into sqlite3 tables.
     """
-
-    # SQLite3 command templates
     sqlGetMovieData_   = """select * from movies where rowid = {0};"""
-    #sqlGetPersonID_    = """select rowid from people where rturl = {0};"""
-    #sqlGetActorID_     = """select rowid from actors where peopleid = {0} and movieid = {1};"""
-    #sqlGetDirectorID_  = """select rowid from directors where peopleid = {0} and movieid = {1};"""
-    #sqlGetCharacterID_ = """select rowid from characters where peopleid = {0} and movieid = {1} and name = {2};"""
     sqlUpdateMoviesKV_ = """update movies set {0} = '{1}' where rowid = {2};"""
 
     sqlcmd = sqlGetMovieData_.format(movieid)
@@ -110,7 +104,6 @@ def updateMovieMetaDataRTDB(con,movieid,metaData,logfile=None,logging=False,quie
     title,year,releasedate,rtmeterall,rtmetertop,criticconsensus,runtime,rating, \
         ratingnotes,medium,version,genres,studio,synopsis,url = row
 
-    # update meta data
     vars = ["releasedate","rtmeterall","rtmetertop","criticconsensus","runtime","rating", \
                 "ratingnotes","genres","studio","synopsis"]
     varlist = [var for var in vars if not eval(var)]
@@ -119,42 +112,81 @@ def updateMovieMetaDataRTDB(con,movieid,metaData,logfile=None,logging=False,quie
         sqlcmd = sqlUpdateMoviesKV_.format(var,value,movieid)
         trySqlcmdCommit(con,sqlcmd)
     
-    return
 
-
-def updateDirectorsRTDB(movieid,metaData):
+def updatePersonRT(con,credited,rturl):
     """
-    
     """
-    sqlSelectRTUrlPeople_ = """select personid, rturl from people where rturl = "{0}";"""  
+    sqlSelectRTUrlPeople_ = """select personid, rturl from people where rturl = "{0}";"""
     sqlUpdateRTUrlPeople_ = """insert into people (credited,rturl) values ("{0}","{1}");"""
+
+    sqlcmd = sqlSelectRTUrlPeople_.format(rturl)
+    results = trySqlcmdFetchall(con,sqlcmd)
+    if results: personid = results[0][0]
+    else:
+        sqlcmd = sqlUpdateRTUrlPeople_.format(credited,rturl)
+        personid = trySqlcmdCommit(con,sqlcmd)
+
+    return personid
+
+def updateDirectorRTDB(con,movieid,director):
+    """
+    """
     sqlSelectDirectors_ = """select * from directors where personid = {0} and movieid = {1};"""
     sqlInsertDirectors_ = """insert into directors (personid,movieid) values ({0},{1});"""
-    
-    # update directors
-    for person in metaData['directors']:
-        credited = person[0]
-        rturl = person[1]
-        sqlcmd = sqlSelectRTUrlPeople_.format(rturl)
-        results = trySqlcmdFetchall(con,sqlcmd)
-        if results: personid = results[0][0]
-        else:
-            sqlcmd = sqlUpdateRTUrlPeople_.format(credited,rturl)
-            personid = trySqlcmdCommit(con,sqlcmd)
-            
-        sqlcmd = sqlSelectDirectors_.format(personid,movieid)
-        results = trySqlcmdFetchall(con,sqlcmd)
-        if results: print "Director alread exists in DB"
-        else:
-            sqlcmd = sqlInsertDirectors_.format(personid,movieid)
-            rowid = trySqlcmdCommit(con,sqlcmd)
+
+    credited = director[0]
+    rturl = director[1]
+    personid = updatePersonRT(con,credited,rturl)
+
+    sqlcmd = sqlSelectDirectors_.format(personid,movieid)
+    results = trySqlcmdFetchall(con,sqlcmd)
+    if results: print "Director alread exists in DB"
+    else:
+        sqlcmd = sqlInsertDirectors_.format(personid,movieid)
+        rowid = trySqlcmdCommit(con,sqlcmd)
 
 
-
-def updateWritersRTDB(movieid,metaData):
+def updateWritersRTDB(con,movieid,writer):
     """
     """
+    sqlSelectWriters_ = """select * from writers where personid = {0} and movieid = {1};"""
+    sqlInsertWriters_ = """insert into writers (personid,movieid) values ({0},{1});"""
     
+    credited = writer[0]
+    rturl    = writer[1]
+    personid = updatePersonRT(con,credited,rturl)
+        
+    sqlcmd = sqlSelectWriters_.format(personid,movieid)
+    results = trySqlcmdFetchall(con,sqlcmd)
+    if results: print "Writer alread exists in DB"
+    else:
+        sqlcmd = sqlInsertWriters_.format(personid,movieid)
+        rowid = trySqlcmdCommit(con,sqlcmd)
+
+
+def updateActorRTDB(con,movieid,actor):
+    """
+    """
+    sqlSelectActors_ = """select * from actors where personid = {0} and movieid = {1};"""
+    sqlInsertActors_ = """insert into actors (personid,movieid) values ({0},{1});"""
+
+    credited = actor[0]
+    rturl = actor[1]
+    personid = updatePersonRT(con,credited,rturl)
+
+    sqlcmd = sqlSelectActors_.format(personid,movieid)
+    results = trySqlcmdFetchall(con,sqlcmd)
+    if results: print "Actor alread exists in DB"
+    else:
+        sqlcmd = sqlInsertActors_.format(personid,movieid)
+        rowid = trySqlcmdCommit(con,sqlcmd)
+
+
+
+
+
+
+
 
 def populateRTURL(con,movieList,logfname="populateRTURL.log"):
     """                                                             
