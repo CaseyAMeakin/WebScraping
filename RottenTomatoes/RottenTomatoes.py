@@ -30,7 +30,32 @@ def get_parent_text(elem):
     return justParentText.strip()
 
 
-def getMovieURLRT(movie):
+"""
+Methods for the RT Class
+"""
+
+def queryForMovieRT(movie):
+    """
+    Returns Beautifulsoup after querying RT for the input movie.
+    The movie argument is and array like: [Array]([String]Year,[Year]Title)
+    """
+    base_url = 'http://www.rottentomatoes.com'
+    base_search_url = base_url + '/search/?search='
+    movie_title = unicode(movie[1])
+    movie_title_words = word_tokenize(stripPunct(movie_title))
+    movie_year  = movie[0]
+
+    # construct query url
+    search_url = base_search_url
+    for word in movie_title_words:
+        search_url = search_url + word.lower() + '+'
+    search_url = search_url+str(movie[0])
+
+    soup = getTheSoup(search_url)
+    return soup
+
+
+def getMovieURLRT(queryPageSoup):
     """ 
     Returns the RT movie page URL by sending a simple query to the rottentomatoes website.
 
@@ -62,77 +87,67 @@ def getMovieURLRT(movie):
     Action in this case: return an error string containing the text "getMovieURLRT.Error".
     """
 
-    _ErrorCode = 'getMovieURLRT.Error'
-
     base_url = 'http://www.rottentomatoes.com'
-    base_search_url = base_url + '/search/?search='
-
-    movie_title = unicode(movie[1])
-    movie_title_words = word_tokenize(stripPunct(movie_title))
-    movie_year  = movie[0]
-
-    # construct query url
-    search_url = base_search_url
-    for word in movie_title_words:
-        search_url = search_url + word.lower() + '+'
-    search_url = search_url+str(movie[0])
-
-    # open query url
+    
     try:
-        res = urllib2.urlopen(search_url)
-    except (urllib2.URLError, urllib2.HTTPError):
-        return (movie[0],movie[1],'getMovieURLRT.Error.urlopen')
+        h1MainContainer  = queryPageSoup.find("div",attrs={"id":"main_container"}).find("h1")
+    except:
+        print 'getMovieURLRT.Error.h1MainContainer'
+        return ''
 
-    # read the page and parse with bs4
-    f = res.read()
-    resultsSoup = bs(f,'lxml')
 
-    # find main_contents container div and h1 header
-    divMainContainer = resultsSoup.find("div",attrs={"id":"main_container"})
-    if not divMainContainer: 
-        return (movie[0],movie[1],'getMovieURLRT.Error.divMainContainer')
-    h1MainContainer  = divMainContainer.find("h1")
-    if not h1MainContainer:
-        return (movie[0],movie[1],'getMovieURLRT.Error.h1MainContainer')
-
-    # Case 1. directly lands on movie page
+    # directly lands on movie page, return url
     if h1MainContainer.has_attr('class'):
         if "title" in h1MainContainer.attrs['class']:
-            return (movie[0],movie[1],res.geturl())
+            return res.geturl()
 
-    # Case 2. list of search results
+    # otherwise inspect list of search results if found
     if "search" in h1MainContainer.get_text().lower():
-        divResultsAllTab = divMainContainer.find("div",attrs={"id":"results_all_tab"})
-        if not divResultsAllTab:
-            return (movie[0],movie[1],'getMovieURLRT.Error.divResultsAllTab')
-        ulMovieResults = divResultsAllTab.find("ul",attrs={"id":"movie_results_ul"})
-        if not ulMovieResults:
-            return (movie[0],movie[1],'getMovieURLRT.Error.ulMovieResults')
-        liMovies = ulMovieResults.findAll("li")
-        if not liMovies:
-            return (movie[0],movie[1],'getMovieURLRT.Error.liMovies')
-        divFirstMovieBody = liMovies[0].find("div",attrs={"class":"media-body"})
-        if not divFirstMovieBody:
-            return (movie[0],movie[1],'getMovieURLRT.Error.divFirstMovieBody')
-        divFirstMovieHead = divFirstMovieBody.find("div",attrs={"class":"media-heading"})
-        if not divFirstMovieHead:
-            return (movie[0],movie[1],'getMovieURLRT.Error.divFirstMovieHead')
-        firstMovieAnchor = divFirstMovieHead.find("a",attrs={"class":"articleLink"})
-        if not firstMovieAnchor:
-            return (movie[0],movie[1],'getMovieURLRT.Error.firstMovieAnchor')
-        #firstMovieTitle = firstMovieAnchor.get_text()
-        firstMovieSpanYear = divFirstMovieHead.find("span",attrs={"class":"movie_year"})
-        if firstMovieSpanYear:
+        try:
+            liMovies = divMainContainer.find("div",attrs={"id":"results_all_tab"}) \
+                .find("ul",attrs={"id":"movie_results_ul"}) \
+                .findAll("li")
+        except:
+            print 'getMovieURLRT.Error.liMovies'
+            return ''
+        
+        try:
+            firstMovieAnchor = liMovies[0].find("div",attrs={"class":"media-body"}) \
+                .find("div",attrs={"class":"media-heading"}) \
+                .find("a",attrs={"class":"articleLink"})
+        except:
+            print 'getMovieURLRT.Error.firstMovieAnchor'
+            return ''
+        try:
+            firstMovieSpanYear = liMovies[0].find("div",attrs={"class":"media-body"}) \
+                .find("div",attrs={"class":"media-heading"}) \
+                .find("span",attrs={"class":"movie_year"})
             firstMovieYear = re.search("(\d{4})",firstMovieSpanYear.get_text()).group(0)
-            if int(firstMovieYear) != int(movie[0]):
-                return (movie[0],movie[1],'getMovieURLRT.Error.firstMovieYearMatch')
-        else:
-            return (movie[0],movie[1],'getMovieURLRT.Error.firstMovieSpanYear')
-        firstMovieURL = base_url + firstMovieAnchor.attrs['href']
-        return  (movie[0],movie[1],firstMovieURL)
+        except:
+            print 'getMovieURLRT.Error.firstMovieSpanYear'
+            return ''
 
-    # Case 3. query returns no results or some other unaccounted for case
-    return (movie[0],movie[1],'getMovieURLRT.Error.NoResults')
+        if int(firstMovieYear) != int(movie[0]):
+            print 'getMovieURLRT.Error.firstMovieYearMatch'
+            return ''
+        firstMovieURL = base_url + firstMovieAnchor.attrs['href']
+        return firstMovieURL
+
+    else:
+        print 'getMovieURLRT.Error.unexpectedQueryResult'
+        return ''
+
+
+def getTheSoup(url,bsparser='lxml'):
+    """
+    """
+    try:
+        res = urllib2.urlopen(url)
+    except (urllib2.URLError, urllib2.HTTPError):
+        return bs('',bsparser)
+    soup = bs(res.read(),bsparser)
+    return soup
+
 
 
 def getMovieMetaDataRT(url,logfile=None,logging=False,quiet=True):
@@ -140,14 +155,12 @@ def getMovieMetaDataRT(url,logfile=None,logging=False,quiet=True):
     Scrape movie meta data from the RT site, return in a dictionary
     data structure.
     """
+
     base_url = 'http://www.rottentomatoes.com'
 
-    try:
-        res = urllib2.urlopen(url)
-    except (urllib2.URLError, urllib2.HTTPError):
-        return 'getMovieMetaDataRT.Error.urlopen', {}
-    soup = bs(res.read(),'lxml')
+    soup = getTheSoup(url)
 
+    # Parse the XML with Beautiful Soup
     divScorePanel = soup.find("div",attrs={"id":"scorePanel"})
     x = checkFind(divScorePanel,'divScorePanel')
     if x:return x
@@ -162,19 +175,19 @@ def getMovieMetaDataRT(url,logfile=None,logging=False,quiet=True):
 
     spanAllCriticsRatingValue = divAllCriticsNumbers.find("span",attrs={"itemprop":"ratingValue"})
     x = checkFind(spanAllCriticsRatingValue,'spanAllCriticsRatingValue')
-    if x:return x
+    #if x:return x
 
     divTopCriticsNumbers = divTabContent.find("div",attrs={"id":"top-critics-numbers"})
     x = checkFind(divTopCriticsNumbers,'divTopCriticsNumbers')
     if x:return x
 
     spanTopCriticsRatingValue = divTopCriticsNumbers.find("span",attrs={"itemprop":"ratingValue"})
-    #x = checkFind(spanTopCriticsRatingValue,'spanTopCriticsRatingValue')
+    x = checkFind(spanTopCriticsRatingValue,'spanTopCriticsRatingValue')
     #if x:return x
     
     pCriticConsensus = divAllCriticsNumbers.find("p",attrs={"class":"critic_consensus"})
     x = checkFind(pCriticConsensus,'pCriticConsensus')
-    if x:return x
+    #if x:return x
 
     divMovieInfo = soup.find("div",attrs={"class":"movie_info"})
     x = checkFind(divMovieInfo,'divMovieInfo')
@@ -226,10 +239,12 @@ def getMovieMetaDataRT(url,logfile=None,logging=False,quiet=True):
 
     # Parse elements pulled from page, add to dictionary
 
-    allCriticsRatingValue = spanAllCriticsRatingValue.get_text()
+    if spanAllCriticsRatingValue: allCriticsRatingValue = spanAllCriticsRatingValue.get_text()
+    else: allCriticsRatingValue = -1
     if spanTopCriticsRatingValue: topCriticsRatingValue = spanTopCriticsRatingValue.get_text()
     else: topCriticsRatingValue = -1
-    criticConsensus = get_parent_text(pCriticConsensus)
+    if pCriticConsensus: criticConsensus = get_parent_text(pCriticConsensus)
+    else: criticConsensus = ""
     movieSynopsis = get_parent_text(pMovieSynopsis)
     if spanMovieSynopsisRemaining: 
         movieSynopsisRemaining = spanMovieSynopsisRemaining.get_text()
@@ -324,6 +339,8 @@ def getMovieMetaDataRT(url,logfile=None,logging=False,quiet=True):
     if(not quiet):
         print msg
     return ('Success',metaData)
+
+
 
 
 def getMovieReviewDataRT(url):
