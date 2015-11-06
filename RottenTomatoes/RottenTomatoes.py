@@ -37,8 +37,9 @@ def get_parent_text(elem):
 
 
 """
-Methods for the RT Class
+Move these into an RT class
 """
+
 
 def makeMovieSearchURLRT(movie):
     """
