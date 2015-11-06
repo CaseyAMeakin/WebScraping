@@ -8,6 +8,8 @@ from datetime import *
 
 
 def splitRatingAndNotes(contentRating):
+    """
+    """
     m = re.search('(.*)\s+\((.*)\).*',contentRating)
     if m:
         try:
@@ -23,17 +25,43 @@ def splitRatingAndNotes(contentRating):
 
 
 def stripPunct(to_translate, translate_to=u''):
+    """
+    """
     not_letters_or_digits = u'!"#%\'()*+,-./:;<=>?@[\]^_`{|}~'
     translate_table = dict((ord(char), translate_to) for char in not_letters_or_digits)
     return to_translate.translate(translate_table)
 
+
 def get_parent_text(elem):
+    """
+    """
     parentItems = []
     for item in elem.children:
         if isinstance(item,bs4.element.NavigableString):
             parentItems.append(item)
     justParentText = "".join(parentItems)
     return justParentText.strip()
+
+
+def getTheSoup(url,bsparser='lxml'):
+    """                                                                                                                                                     
+    """
+    try:
+        res = urllib2.urlopen(url)
+    except (urllib2.URLError, urllib2.HTTPError):
+        return None,bs('',bsparser)
+    soup = bs(res.read(),bsparser)
+    return soup
+
+
+def resolveURL(url):
+    """
+    """
+    try:
+        res = urllib2.urlopen(url)
+    except:
+        return None
+    return res.geturl()
 
 
 """
@@ -95,6 +123,7 @@ def getMovieURLRT(movie):
     search_url = makeMovieSearchURLRT(movie)
     queryPageSoup = getTheSoup(search_url)
 
+
     try:
         divMainContainer = queryPageSoup.find("div",attrs={"id":"main_container"})
         h1MainContainer  = divMainContainer.find("h1")
@@ -106,7 +135,8 @@ def getMovieURLRT(movie):
     # directly lands on movie page, return url
     if h1MainContainer.has_attr('class'):
         if "title" in h1MainContainer.attrs['class']:
-            return search_url
+            url = resolveURL(search_url)
+            return url
 
     # otherwise inspect list of search results if found
     if "search" in h1MainContainer.get_text().lower():
@@ -117,40 +147,29 @@ def getMovieURLRT(movie):
         except:
             print 'getMovieURLRT.Error.liMovies'
             return ''
-        try:
-            divFirstMovieHead = liMovies[0].find("div",attrs={"class":"media-body"}) \
-                .find("div",attrs={"class":"media-heading"})
-            firstMovieAnchor = divFirstMovieHead.find("a",attrs={"class":"articleLink"})
-        except:
-            print 'getMovieURLRT.Error.firstMovieAnchor'
-            return ''
-        try:
-            firstMovieSpanYear = divFirstMovieHead.find("span",attrs={"class":"movie_year"})
-            firstMovieYear = re.search("(\d{4})",firstMovieSpanYear.get_text()).group(0)
-        except:
-            print 'getMovieURLRT.Error.firstMovieYear'
-            return ''
 
-        if int(firstMovieYear) != int(movie[0]):
-            print 'getMovieURLRT.Error.firstMovieYearMatch'
-            return ''
-        firstMovieURL = base_url + firstMovieAnchor.attrs['href']
-        return firstMovieURL
+
+        for liMovie in liMovies:
+            try:
+                divMovieHead = liMovie.find("div",attrs={"class":"media-body"}) \
+                    .find("div",attrs={"class":"media-heading"})
+                movieAnchor = divMovieHead.find("a",attrs={"class":"articleLink"})
+                movieSpanYear = divMovieHead.find("span",attrs={"class":"movie_year"})
+                if movieSpanYear: 
+                    m = re.search("(\d{4})",movieSpanYear.get_text())
+                    if m:
+                        movieYear = int(m.group(1))
+                        if movieYear == int(movie[0]):
+                            movieURL = base_url + movieAnchor.attrs['href']
+                            return movieURL
+            except:
+                print 'getMovieURLRT.Error.movieYear'
+                return ''
+        print 'getMovieURLRT.Error.movieYear.NoMatch'
 
     else:
         print 'getMovieURLRT.Error.unexpectedQueryResult'
         return ''
-
-
-def getTheSoup(url,bsparser='lxml'):
-    """
-    """
-    try:
-        res = urllib2.urlopen(url)
-    except (urllib2.URLError, urllib2.HTTPError):
-        return None,bs('',bsparser)
-    soup = bs(res.read(),bsparser)
-    return soup
 
 
 def getMovieMetaDataRT(moviePageSoup,logfile=None,logging=False,quiet=True):
@@ -203,7 +222,7 @@ def getMovieMetaDataRT(moviePageSoup,logfile=None,logging=False,quiet=True):
     studio = None         
     runtime = None        
 
-    # Parse the XML with Beautiful Soup
+    # Parse the XML with BeautifulSoup
     try:
         divScorePanel = soup.find("div",attrs={"id":"scorePanel"})
         if divScorePanel: divTabContent = divScorePanel.find("div",attrs={"class":"tab-content"})
@@ -341,32 +360,38 @@ def getMovieMetaDataRT(moviePageSoup,logfile=None,logging=False,quiet=True):
     return metaData
 
 
+def getMovieReviewDataRT(moviepage_url):
 
-def getMovieReviewDataRT(url):
-    if('queryRTError' in url):
-        return
+    review_link = moviepage_url+'reviews/'
+    soup = getTheSoup(review_link)
+
     
-    review_link = url+'reviews/'
-    print review_link
+    divReviews = None
+    pageInfo = None
+    pageInfoText = None
 
+    # parse the XML with BeautifulSoup
     try:
-        res = urllib2.urlopen(review_link)
-    except (urllib2.URLError, urllib2.HTTPError):
-        return 'getMovieReviewLinksRT.urlopen'
+        divReviews = soup.find("div",attrs={"id":"reviews"})
+        if divReviews: pageInfo = divReviews.find("span",attrs={"class":"pageInfo"})
+        if pageInfo: pageInfoText = pageInfo.get_text()
+        if pageInfoText: m = re.search('\s+Page\s+(\d)\s+of\s+(\d)',pageInfoText)
+        onPage = 0
+        numPages = 0
+        if m: 
+            try: 
+                onPage = int(m.group(1))
+                numPages = int(m.group(2))
+            except:
+                print 'getMovieReviewDataRT.Error.pageInfoText.regexp'
+                pass
+    except:
+        print 'getMovieReviewDataRT.Error.pageInfo'
+        pass
 
-    soup = bs(res.read(),'lxml')
-    pageInfo = soup.find("span",attrs={"class":"pageInfo"}).get_text()
-    p = re.compile(".*Page.*(\d).*of.*(\d)")
-    m = p.match(pageInfo)
-    try:
-        onPage   = int(m.group(1))
-        numPages = int(m.group(2))
-    except IndexError:
-        numPages = 1
-        onPage   = 1
 
     for page in range(numPages):
-        
+
         div_review_rows = soup.find('div',attrs={"class":"content"}) \
             .findAll('div',attrs={"class":"review_table_row"})
                 
@@ -401,6 +426,7 @@ def getMovieReviewDataRT(url):
         except (urllib2.URLError, urllib2.HTTPError):
             return 'getMovieReviewLinksRT.urlopen'
         soup = bs(res.read(),'lxml')
+
     
     return soup
 

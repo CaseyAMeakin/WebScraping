@@ -268,44 +268,51 @@ def populateTitleYear(con,movieList):
     con.commit()                                                           
 
 
-def populateRTURL(con,movieList,logfname="populateRTURL.log"):
+def updateMoviesRTURL(con,movieid,rturl):
     """
     """
+    sqlUpdateMovieURL_ = u"""update movies set rtmovieurl = "{0}" where rowid = "{1}";"""
+    sqlcmd = sqlUpdateMovieURL_.format(rturl,movieid)
+    rowid= trySqlcmdCommit(con,sqlcmd)
+    return rowid
+
+
+def logRTDB(logfile,op,msg,quiet=True,doWrite=True):
+    msg = u"""[{0}, {1}, {2}]""".format(datetime.now().isoformat(),op,msg)
+    if doWrite: logfile.write(msg + "\n")
+    if not quiet: print msg
+    return msg
+
+
+def populateMoviesRTURL(con,movieList,logfname="populateRTURL.log",quiet=True):
+    """
+    """
+    myName = "populateMovieRTURL"
+    
     logfile = open(logfname,"a")
     cur = con.cursor()
-    sqlGetRowid_ = u"""select rowid from movies where year = {0} and title = "{1}";"""
+    sqlGetRowidRTURL_ = u"""select rowid,rtmovieurl from movies where year = {0} and title = "{1}";"""
 
     for movie in movieList:
-        # Get rowid for movie with given title and year
-        sqlGetRowid = sqlGetRowid_.format(movie[0],movie[1])
-        rowid_ = cur.execute(sqlGetRowid).fetchall()
-        if len(rowid_) != 1:
-            msg = "{0}\t{1}\t{2}\t{3}" \
-                .format(movie[0],movie[1],'populateRTURL.Error.rowid',datetime.now().isoformat())
-            print msg
-            logfile.write(msg+"\n")
-            return
-        try:
-            rowid = rowid_[0][0]
-        except:
-            msg = "{0}\t{1}\t{2}\t{3}" \
-                .format(movie[0],movie[1],'populateRTURL.Error.rowid',datetime.now().isoformat())
-    
-        # Scrape URL from RT website
-        result = getMovieURLRT(movie)
-        url = result[2]        
 
-        # Add URL data to sqlite3 table
-        if "error" not in url.lower():
-            try:
-                updateTableRowKeyValueString(con,"movies",rowid,"rtmovieurl",url)
-            except:
-                msg = "{0}\t{1}\t{2}\t{3}".format(result[0],result[1],'Sqlite3.Error',datetime.now().isoformat())
-                print msg
-                logfile.write(msg+"\n")
-                return
+        if not quiet: print u"""{1},{0}""".format(movie[0],movie[1])
 
-        msg = "{0}\t{1}\t{2}\t{3}".format(result[0],result[1],result[2],datetime.now().isoformat())
-        print msg
-        logfile.write(msg+"\n")
+        sqlcmd = sqlGetRowidRTURL_.format(movie[0],movie[1])
+        results = trySqlcmdFetchall(con,sqlcmd)
+        if not results:
+            msg = logRTDB(logfile,myName,'Error: '+sqlcmd,quiet=quiet)
+            continue
+
+        row = results[0]
+        movieid = row[0]
+        rturl = row[1]
+        if not rturl:
+            url = getMovieURLRT(movie)
+            if url: 
+                rowid = updateMoviesRTURL(con,movieid,url)
+                msg = logRTDB(logfile,myName,'Success: '+sqlcmd,quiet=quiet)
+            else:
+                msg = logRTDB(logfile,myName,'Error: getMovieURLRT',quiet=quiet)
+
+    logfile.close()
 
