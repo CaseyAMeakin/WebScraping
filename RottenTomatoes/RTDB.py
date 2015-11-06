@@ -165,7 +165,7 @@ def updateWritersRTDB(con,movieid,writer):
 def updateActorAndCharacterRTDB(con,movieid,actor):
     """
     """
-    sqlSelectActors_ = u"""select * from actors where personid = {0} and movieid = {1};"""
+    sqlSelectActors_ = u"""select rowid,* from actors where personid = {0} and movieid = {1};"""
     sqlInsertActors_ = u"""insert into actors (personid,movieid) values ({0},{1});"""
     sqlSelectChar_ = u"""select * from characters where actorid = {0} and movieid = {1} and name = "{2}";"""
     sqlInsertChar_ = u"""insert into characters (actorid,movieid,name) values ({0},{1},"{2}");"""
@@ -176,33 +176,62 @@ def updateActorAndCharacterRTDB(con,movieid,actor):
 
     sqlcmd = sqlSelectActors_.format(personid,movieid)
     results = trySqlcmdFetchall(con,sqlcmd)
-    if results: print "Actor alread exists in DB"
+    if results: 
+        print "Actor alread exists in DB"
+        row = results[0]
+        actorid = row[0]
     else:
         sqlcmd = sqlInsertActors_.format(personid,movieid)
-        rowid = trySqlcmdCommit(con,sqlcmd)
-
+        actorid = trySqlcmdCommit(con,sqlcmd)
+        
     name = escapeQuotes(actor[2])
     if not name:
         print "Character name not available"
         return
-    sqlcmd = sqlSelectChar_.format(personid,movieid,name)
+    sqlcmd = sqlSelectChar_.format(actorid,movieid,name)
     results = trySqlcmdFetchall(con,sqlcmd)
     if results: print "Character already exist in DB"
     else:
-        sqlcmd = sqlInsertChar_.format(personid,movieid,name)
+        sqlcmd = sqlInsertChar_.format(actorid,movieid,name)
         rowid = trySqlcmdCommit(con,sqlcmd)
 
 
 def getMovieURLAndIdFromDB(con,movie):
     sqlGetMovieInfo_ = u"""select rowid,rtmovieurl from movies where year="{0}" and title ="{1}";"""
     sqlcmd = sqlGetMovieInfo_.format(movie[0],movie[1])
-    results = trySqlcmdFetchall(con,sqlcmd,quiet=False)[0]
+    results = trySqlcmdFetchall(con,sqlcmd,quiet=False)
     if not results:
         print 'Error'
         return None
-    movieid,url = results
+    movieid,url = results[0]
     return (movieid,url)
 
+
+
+def populateActorsAndCharacters(con,movie):
+
+    result = getMovieURLAndIdFromDB(con,movie)
+    if result:
+        movieid,url = result
+        if not url:
+            print 'Error: getMovieURLAndIdFromDB'
+            return
+    else:
+        print 'Error: getMovieURLAndIdFromDB'
+        return
+
+    result = getMovieMetaDataRT(url)
+    if result:
+        exitCode,metaData = result
+        if not metaData:
+            print 'Error.getMovieMetaDataRT'
+            return
+    else:
+        print 'Error.getMovieMetaDataRT'
+        return
+
+    for actor in metaData['actors']:
+        updateActorAndCharacterRTDB(con,movieid,actor)
 
 def populateMovieMetaData(con,movie):
 
@@ -219,6 +248,9 @@ def populateMovieMetaData(con,movie):
     result = getMovieMetaDataRT(url)
     if result:
         exitCode,metaData = result
+        if not metaData:
+            print 'Error.getMovieMetaDataRT'
+            return
     else:
         print 'Error.getMovieMetaDataRT'
         return
