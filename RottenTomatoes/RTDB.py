@@ -278,7 +278,7 @@ def updateMoviesRTURL(con,movieid,rturl):
 
 
 def logRTDB(logfile,op,msg,quiet=True,doWrite=True):
-    msg = u"""[{0}, {1}, {2}]""".format(datetime.now().isoformat(),op,msg)
+    msg = u"""[ {0}, {1}, {2} ]""".format(datetime.now().isoformat(),op,msg)
     if doWrite: logfile.write(msg + "\n")
     if not quiet: print msg
     return msg
@@ -312,7 +312,7 @@ def populateMoviesRTURL(con,movieList,logfname="populateRTURL.log",quiet=True):
                 rowid = updateMoviesRTURL(con,movieid,url)
                 msg = logRTDB(logfile,myName,'Success: '+sqlcmd,quiet=quiet)
             else:
-                msg = logRTDB(logfile,myName,'Error: getMovieURLRT',quiet=quiet)
+                msg = logRTDB(logfile,myName,u"""Error: getMovieURLRT {1},{0}""".format(movie[0],movie[1]),quiet=quiet)
 
     logfile.close()
 
