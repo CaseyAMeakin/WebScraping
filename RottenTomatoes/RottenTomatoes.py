@@ -93,12 +93,10 @@ def getMovieURLRT(movie):
     """ 
     Returns the RT movie page URL by sending a simple query to the rottentomatoes website.
 
-    * Using the following simple strategy the subroutine returns ~90% of the titles correctly 
+    * Using the following simple strategy the subroutine returns ~93% of the titles correctly 
     based on a sample of ~3500 movie titles between the year 2000 and 2014 as listed on the 
-    film_in_year pages on Wikipedia.  The majority of misses are due to the movie page not being 
-    the first in the list for case 2 below: fixing this should result in ~98% correct hit rate.  
-    About half of the remaining misses has to do with handling of special characters in the 
-    name, mostly the dash.
+    film_in_year pages on Wikipedia. The majority of those not found have different years for
+    the movie as reported by RT compated to Wikipedia.
 
     Three classes of results from query:
     1. Query lands directly on movie page: identify by 
@@ -108,9 +106,9 @@ def getMovieURLRT(movie):
     2. Query returns a list of relevant matches.
     Case identified by: The h1 heading in the "main_container" divider contains the phrase 
     "Search Results for".
-    Action in this case: select the first match in the list of movie results as long as the 
-    movie year for that entry agrees with the query, otherwise return an error string
-    containing the text "getMovieURLRT.Error".
+    Action in this case: Go through the list of movie results; compare the queried year
+    against the year of the search result, return when years match. If not year matches 
+    in search results, print error string: "getMovieURLRT.Error.movieYear".
 
     3. Query returns no: identify 
     Case identified by: The h1 heading in the "main_container" divider contains the phrase
