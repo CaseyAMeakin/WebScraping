@@ -234,7 +234,8 @@ def updateReviewsRTDB(con,movieid,reviewData,logfile=None,logging=False,quiet=Tr
     """
     """
     base_url = "http://www.rottentomatoes.com"
-    getReviewByMovieid_       = u"""select rowid from reviews where movieid = {0};"""
+    getReviewByMovieid_       = 
+    u"""select rowid,personid,source,reviewurl,fresh,topcritic,blurb from reviews where movieid = {0};"""
     sqlInsertMovieidIntoReviews_  = u"""insert into reviews (movieid) values ({0});"""
     sqlUpdateReviewsKVString_ = u"""update reviews set {0} = '{1}' where rowid = {2};"""
     sqlUpdateReviewsKV_       = u"""update reviews set {0} = {1} where rowid = {2};"""
@@ -242,24 +243,32 @@ def updateReviewsRTDB(con,movieid,reviewData,logfile=None,logging=False,quiet=Tr
     sqlcmd = getReviewByMovieid_.format(movieid)
     results = trySqlcmdFetchall(con,sqlcmd)
 
-    if results:
-        return
-    
+    if not results:
+        rowid,personid,source,reviewurl,fresh,topcritic,blurb  = 
+        [ None, None, None, None, None, None, None ]
+    row = results[0]
+    rowid,personid,source,reviewurl,fresh,topcritic,blurb = row
+
+    vars = ["rowid","personid","source","reviewurl","fresh","topcritic","blurb"]
+    varlist = [var for var in vars if not eval(var)]
+
     for review in reviewData:
-        
         credited = review['criticname']
         rturl = base_url + review['criticurl']
+        #print u"""{0:<40s}{1:<40s}""".format(credited,rturl)
+
         personid = 0
         if credited or rturl:
             if not quiet: print u"""{0:<40s}{1:<40s}""".format(credited,rturl)
             personid = updatePersonRTDB(con,credited,rturl)
-
-        sqlcmd = sqlInsertMovieidIntoReviews_.format("movieid")
-        rowid = trySqlcmdCommit(con,sqlcmd)
+            
+        sqlcmd = sqlInsertMovieidIntoReviews_.format(movieid)
+        rowid = trySqlcmdCommit(con,sqlcmd,quiet=False)
 
         if personid !=0:
             sqlcmd = sqlUpdateReviewsKVString_.format("personid",personid,rowid)
             rowid = trySqlcmdCommit(con,sqlcmd)
+
 
         sqlcmd = sqlUpdateReviewsKVString_.format("source",review['criticsource'],rowid)
         rowid = trySqlcmdCommit(con,sqlcmd)
@@ -273,7 +282,7 @@ def updateReviewsRTDB(con,movieid,reviewData,logfile=None,logging=False,quiet=Tr
         sqlUpdateReviewsKVString_.format("fresh",int(review['fresh']),rowid)
         rowid =trySqlcmdCommit(con,sqlcmd)
 
-        sqlUpdateReviewsKVString_.format("blurb",int(review['blurb']),rowid)
+        sqlUpdateReviewsKVString_.format("blurb",review['blurb'],rowid)
         rowid =trySqlcmdCommit(con,sqlcmd)
 
 
@@ -348,18 +357,21 @@ def populateTitleYear(con,movieList):
     con.commit()                                                           
 
 
-def populateReviewsRTDB(con,movieList,logfname="popualateReviews",quiet=True):
+def populateReviewsRTDB(con,movieList,logfname="populateReviews.log",quiet=True):
     """
     """
     myName = "populateReviewsRTDB"
     logfile = open(logfname,"a")
     sqlGetRowidRTURL_ = u"""select rowid,rtmovieurl from movies where year = {0} and title = "{1}";"""
+    getReviewByMovieid_       = u"""select rowid from reviews where movieid = {0};"""
 
     for movie in movieList:
+        
         if not quiet: print u"""{1},{0}""".format(movie[0],movie[1])
                 
         sqlcmd = sqlGetRowidRTURL_.format(movie[0],movie[1])
         results = trySqlcmdFetchall(con,sqlcmd)
+
         if not results:
             msg = logRTDB(logfile,myName,'Error: '+sqlcmd,quiet=quiet)
             continue
@@ -367,6 +379,12 @@ def populateReviewsRTDB(con,movieList,logfname="popualateReviews",quiet=True):
         row = results[0]
         movieid = row[0]
         rturl = row[1]
+
+        sqlcmd = getReviewByMovieid_.format(movieid)
+        results = trySqlcmdFetchall(con,sqlcmd)
+        if results:
+            print movie, results[0][0]
+            continue
 
         if rturl:
             reviewData = getMovieReviewDataRT(rturl)
