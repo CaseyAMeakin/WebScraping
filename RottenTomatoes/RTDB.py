@@ -267,7 +267,7 @@ def updateReviewsRTDB(con,movieid,reviewData,logfile=None,logging=False,quiet=Tr
         sqlcmd = sqlUpdateReviewsKVString_.format("reviewurl",review['reviewurl'],rowid)
         rowid =trySqlcmdCommit(con,sqlcmd)
 
-        sqlUpdateReviewsKVString_.format("source",review['source'],rowid)
+        sqlUpdateReviewsKVString_.format("source",review['criticsource'],rowid)
         rowid =trySqlcmdCommit(con,sqlcmd)
         
         sqlUpdateReviewsKVString_.format("fresh",int(review['fresh']),rowid)
