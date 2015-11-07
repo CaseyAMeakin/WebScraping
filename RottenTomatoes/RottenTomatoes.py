@@ -362,20 +362,21 @@ def getMovieReviewDataRT(moviepage_url):
     """
     """
 
+    base_url = "http://www.rottentomatoes.com"
     review_link = moviepage_url+'reviews/'
     soup = getTheSoup(review_link)
     
     divReviews = None
     pageInfo = None
     pageInfoText = None
+    numPages = 0
 
     # parse the XML with BeautifulSoup
     try:
         divReviews = soup.find("div",attrs={"id":"reviews"})
         if divReviews: pageInfo = divReviews.find("span",attrs={"class":"pageInfo"})
         if pageInfo: pageInfoText = pageInfo.get_text()
-        if pageInfoText: m = re.search('\s+Page\s+(\d)\s+of\s+(\d)',pageInfoText)
-        onPage = 0
+        if pageInfoText: m = re.search('\s*Page\s+(\d)\s*of\s*(\d)',pageInfoText)
         numPages = 0
         if m: 
             try: 
@@ -387,45 +388,83 @@ def getMovieReviewDataRT(moviepage_url):
     except:
         print 'getMovieReviewDataRT.Error.pageInfo'
         pass
+    
+    #print "numPages = ", numPages
 
+    theReviews = []
 
     for page in range(numPages):
+        onPage = page + 1
+        #print """Page: {0:}""".format(onPage)
 
-        div_review_rows = soup.find('div',attrs={"class":"content"}) \
-            .findAll('div',attrs={"class":"review_table_row"})
-                
-        for div_review in div_review_rows:
-            div_top_critic  = div_review.find("div",attrs={"class":"top_critic"})
-            top_critic = 'Top Critic' in div_top_critic.get_text().strip()                    
+        divReviews = None
+        divReviewRows = []
 
-            div_critic_name = div_review.find("div",attrs={"class":"critic_name"})
-            if div_critic_name.find("a"): critic_name = div_critic_name.find("a").get_text()
-            else: critic_name = ''
-            if div_critic_name.find("em"): critic_src  = div_critic_name.find("em").get_text()
-            else: critic_src = ''
+        try:
+            divReviews = soup.find('div',attrs={"class":"review_table"})
+            if divReviews: 
+                divReviewRows = divReviews.findAll('div',attrs={"class":"review_table_row"})
+
+            for divReviewRow in divReviewRows:
+
+                divTopCritic  = divReviewRow.find("div",attrs={"class":"top_critic"})
+                topCritic = 'Top Critic' in divTopCritic.get_text().strip()
+
+                divCriticName = divReviewRow.find("div",attrs={"class":"critic_name"})
+                if divCriticName.find("a"): 
+                    aCriticName = divCriticName.find("a")
+                    criticName = aCriticName.get_text().strip()
+                    if aCriticName.has_attr("href"): 
+                        critic_url = aCriticName['href']
+                else: 
+                    criticName = ''
+                    critic_url = ''
                     
-            div_container = div_review.find("div",attrs={"class":"review_container"})
-            div_review_icon = div_container.find("div",attrs={"class":"review_icon"})
-            fresh = 'fresh' in div_review_icon.attrs['class']
-            review_date = div_container.find("div",attrs={"class":"review_date"}).get_text().strip()
-            blurb = div_container.find("div",attrs={"class":"the_review"}).get_text().encode('ascii','ignore')
-            if div_container.find("a"): review_url = div_container.find("a")['href']
-            else: review_url = ''
-            
-            print u"{0:<40s} {1:<40s} {2:<7s} {3:<7s} {4:20s}" \
-                .format(critic_name,critic_src, str(top_critic), str(fresh), review_date)
-            #print "{0:} {1:}".format(review_url,blurb)
+                
+                if divCriticName.find("em"): 
+                    criticSource  = divCriticName.find("em").get_text()
+                else: criticSource = ''
+                
+                divReviewContainer = divReviewRow.find("div",attrs={"class":"review_container"})
+                divReviewIcon = divReviewContainer.find("div",attrs={"class":"review_icon"})
+                fresh = 'fresh' in divReviewIcon.attrs['class']
+                
+                divReviewDate = divReviewContainer.find("div",attrs={"class":"review_date"})
+                if divReviewDate: reviewDate = divReviewDate.get_text().strip()
+                else: reviewDate = ''
 
-        print "Page: {0:}".format(onPage)
-        onPage = onPage + 1
-        new_url = review_link + '?page=' + str(onPage) + '&sort='
+                divTheReview = divReviewContainer.find("div",attrs={"class":"the_review"})
+                blurb = divTheReview.get_text()
 
+                if divReviewContainer.find("a"):
+                    aDivReviewContainer= divReviewContainer.find("a")
+                    review_url = aDivReviewContainer['href']
+                else: review_url = ''
+
+                #print u"""{0:<40s}{1:<40s}{2:<40s}{3:<6s}{4:<6s}{5:<40s}""" \
+                #    .format(criticName,criticSource,critic_url,str(topCritic),str(fresh),review_url)
+                critic_url = critic_url
+
+                aReview = {}
+                aReview['criticname'] = criticName
+                aReview['criticsource'] = criticSource
+                aReview['criticurl'] = critic_url
+                aReview['reviewurl'] = review_url
+                aReview['fresh'] = fresh
+                aReview['topcritic'] = topCritic
+                aReview['blurb'] = blurb
+                theReviews.append(aReview)
+
+
+        except:
+            print 'Error: onPage = ',onPage
+            pass
+
+        new_url = review_link + '?page=' + str(onPage)
         try:
             res = urllib2.urlopen(new_url)
         except (urllib2.URLError, urllib2.HTTPError):
             return 'getMovieReviewLinksRT.urlopen'
         soup = bs(res.read(),'lxml')
 
-    
-    return soup
-
+    return theReviews
