@@ -15,6 +15,7 @@ studio text,
 synopsis text,
 rtmovieurl text,
 unique(title,year,medium,version));
+
 CREATE TABLE people(
  personid INTEGER primary key asc,
  credited text,
@@ -29,28 +30,43 @@ CREATE TABLE people(
  rturl text default "",
  wkurl text default "",
  unique(rturl,wkurl));
+
 CREATE TABLE actors(
 personid int,
 movieid int,
 unique(personid,movieid));
+
 CREATE TABLE directors (
 personid int,
 movieid int,
 unique(personid,movieid));
+
 CREATE TABLE writers(
 personid int,
 movieid int,
 unique(personid,movieid));
+
 CREATE TABLE characters (
 actorid int,
 movieid int,
 name text,
 unique(actorid,movieid,name));
+
 CREATE TABLE reviews (
-personid int,
+criticid int,
 movieid int,
-source text,
-reviewurl text,
+reviewurl text default "",
 fresh int,
+blurb text,
+unique(criticid,movieid));
+
+CREATE TABLE critic (
+personid int,
+sourceid int,
 topcritic int,
-blurb text);
+unique(personid,sourceid));
+
+CREATE TABLE reviewsource (
+sourceid INTEGER primary key asc,
+name text,
+url text);
