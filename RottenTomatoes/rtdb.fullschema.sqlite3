@@ -52,4 +52,5 @@ movieid int,
 source text,
 reviewurl text,
 fresh int,
-topcritic int);
+topcritic int,
+blurb text);
