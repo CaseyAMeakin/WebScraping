@@ -96,7 +96,7 @@ def getMovieURLRT(movie):
     * Using the following simple strategy the subroutine returns ~93% of the titles correctly 
     based on a sample of ~3500 movie titles between the year 2000 and 2014 as listed on the 
     film_in_year pages on Wikipedia. The majority of those not found have different years for
-    the movie as reported by RT compated to Wikipedia.
+    the movie as reported by RT compared to Wikipedia.
 
     Three classes of results from query:
     1. Query lands directly on movie page: identify by 
@@ -359,10 +359,11 @@ def getMovieMetaDataRT(moviePageSoup,logfile=None,logging=False,quiet=True):
 
 
 def getMovieReviewDataRT(moviepage_url):
+    """
+    """
 
     review_link = moviepage_url+'reviews/'
     soup = getTheSoup(review_link)
-
     
     divReviews = None
     pageInfo = None
