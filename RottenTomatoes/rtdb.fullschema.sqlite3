@@ -37,12 +37,19 @@ CREATE TABLE directors (
 personid int,
 movieid int,
 unique(personid,movieid));
+CREATE TABLE writers(
+personid int,
+movieid int,
+unique(personid,movieid));
 CREATE TABLE characters (
 actorid int,
 movieid int,
 name text,
 unique(actorid,movieid,name));
-CREATE TABLE writers(
+CREATE TABLE reviews (
 personid int,
 movieid int,
-unique(personid,movieid));
+source text,
+reviewurl text,
+fresh int,
+topcritic int);
