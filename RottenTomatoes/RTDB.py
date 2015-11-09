@@ -230,6 +230,77 @@ def updateActorAndCharacterRTDB(con,movieid,actor):
         rowid = trySqlcmdCommit(con,sqlcmd)
 
 
+def updateReviewRTDB(con,movieid,review,logfile=None,logging=False,quiet=True):
+    """
+    """
+    base_url = "http://www.rottentomatoes.com"
+    getReviewByMovieidCriticid_ = 
+    u"""select rowid,* from reviews where movieid = {0} and criticid = {1};"""
+    sqlInsertMovieidIntoReviews_  = u"""insert into reviews (movieid) values ({0});"""
+    sqlUpdateReviewsKVString_ = u"""update reviews set {0} = '{1}' where rowid = {2};"""
+    sqlUpdateReviewsKV_       = u"""update reviews set {0} = {1} where rowid = {2};"""
+    
+    """
+    TO-DO
+
+    Flow:
+
+    1. Check if there is a critic entry. If not, update it.
+    This involves updating a record in people if necessary.
+
+    2. Check if there is a review with criticid,movieid pair.
+    If so, update blank entries. If not, insert new record.
+    """
+
+
+    sqlcmd = getReviewByMovieid_.format(movieid)
+    results = trySqlcmdFetchall(con,sqlcmd)
+
+    if results:
+        row = results[0]
+        rowid,personid,source,reviewurl,fresh,topcritic,blurb = row
+    else:
+        rowid,personid,source,reviewurl,fresh,topcritic,blurb  =
+        [ None, None, None, None, None, None, None ]
+        
+    vars = ["source","reviewurl","fresh","topcritic","blurb"]
+    varlist = [var for var in vars if not eval(var)]
+
+    personid = 0
+    credited = review['criticname']
+    rturl = base_url + review['criticurl']
+    if credited or rturl:
+        if not quiet: print u"""{0:<40s}{1:<40s}""".format(credited,rturl)
+        personid = updatePersonRTDB(con,credited,rturl)
+
+
+    sqlcmd = sqlInsertMovieidIntoReviews_.format(movieid)
+    rowid = trySqlcmdCommit(con,sqlcmd,quiet=False)
+    
+    if personid !=0:
+        sqlcmd = sqlUpdateReviewsKVString_.format("personid",personid,rowid)
+        rowid = trySqlcmdCommit(con,sqlcmd)
+
+        
+    sqlcmd = sqlUpdateReviewsKVString_.format("source",review['criticsource'],rowid)
+    rowid = trySqlcmdCommit(con,sqlcmd)
+    
+    sqlcmd = sqlUpdateReviewsKVString_.format("reviewurl",review['reviewurl'],rowid)
+    rowid =trySqlcmdCommit(con,sqlcmd)
+    
+    sqlUpdateReviewsKVString_.format("source",review['criticsource'],rowid)
+    rowid =trySqlcmdCommit(con,sqlcmd)
+    
+    sqlUpdateReviewsKVString_.format("fresh",int(review['fresh']),rowid)
+    rowid =trySqlcmdCommit(con,sqlcmd)
+    
+    sqlUpdateReviewsKVString_.format("blurb",review['blurb'],rowid)
+    rowid =trySqlcmdCommit(con,sqlcmd)
+    
+
+    
+
+
 def updateReviewsRTDB(con,movieid,reviewData,logfile=None,logging=False,quiet=True):
     """
     """
@@ -255,7 +326,6 @@ def updateReviewsRTDB(con,movieid,reviewData,logfile=None,logging=False,quiet=Tr
     for review in reviewData:
         credited = review['criticname']
         rturl = base_url + review['criticurl']
-        #print u"""{0:<40s}{1:<40s}""".format(credited,rturl)
 
         personid = 0
         if credited or rturl:
