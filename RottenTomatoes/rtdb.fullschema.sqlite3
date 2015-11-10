@@ -58,15 +58,15 @@ movieid int,
 reviewurl text default "",
 fresh int,
 blurb text,
-unique(criticid,movieid));
+unique(criticid,movieid,reviewurl));
 
-CREATE TABLE critic (
+CREATE TABLE critics (
 personid int,
 sourceid int,
 topcritic int,
 unique(personid,sourceid));
 
-CREATE TABLE reviewsource (
+CREATE TABLE reviewsources (
 sourceid INTEGER primary key asc,
 name text,
 url text);

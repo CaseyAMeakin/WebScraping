@@ -390,12 +390,9 @@ def getMovieReviewDataRT(moviepage_url):
         pass
     
     #print "numPages = ", numPages
-
     theReviews = []
-
+    onPage = 1
     for page in range(numPages):
-        onPage = page + 1
-        #print """Page: {0:}""".format(onPage)
 
         divReviews = None
         divReviewRows = []
@@ -460,11 +457,14 @@ def getMovieReviewDataRT(moviepage_url):
             print 'Error: onPage = ',onPage
             pass
 
-        new_url = review_link + '?page=' + str(onPage)
-        try:
-            res = urllib2.urlopen(new_url)
-        except (urllib2.URLError, urllib2.HTTPError):
-            return 'getMovieReviewLinksRT.urlopen'
-        soup = bs(res.read(),'lxml')
+        onPage += 1
+        if onPage <= numPages:
+            new_url = review_link + '?page=' + str(onPage)
+            #print new_url
+            try:
+                res = urllib2.urlopen(new_url)
+            except (urllib2.URLError, urllib2.HTTPError):
+                return 'getMovieReviewLinksRT.urlopen'
+            soup = bs(res.read(),'lxml')
 
     return theReviews
