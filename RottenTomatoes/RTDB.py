@@ -285,9 +285,9 @@ def updateReviewRTDB(con,movieid,review,logfile=None,logging=False,quiet=True):
 
     base_url = "http://www.rottentomatoes.com"
 
-    credited = review['criticname']
+    credited = escapeQuotes(review['criticname'])
     rturl = base_url + review['criticurl']
-    source = review['criticsource']
+    source = escapeQuotes(review['criticsource'])
     topcritic = review['topcritic']
     
     personid = 0
@@ -311,7 +311,7 @@ def updateReviewRTDB(con,movieid,review,logfile=None,logging=False,quiet=True):
 
     if not results:
         fresh = int(review['fresh'])
-        blurb = review['blurb']
+        blurb = escapeQuotes(review['blurb'])
         sqlcmd = insertReview_.format(criticid,movieid,reviewurl,fresh,blurb)
         results = trySqlcmdCommit(con,sqlcmd)
     else:
