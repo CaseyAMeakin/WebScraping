@@ -376,7 +376,7 @@ def getMovieReviewDataRT(moviepage_url):
         divReviews = soup.find("div",attrs={"id":"reviews"})
         if divReviews: pageInfo = divReviews.find("span",attrs={"class":"pageInfo"})
         if pageInfo: pageInfoText = pageInfo.get_text()
-        if pageInfoText: m = re.search('\s*Page\s+(\d)\s*of\s*(\d)',pageInfoText)
+        if pageInfoText: m = re.search('\s*Page\s+(\d+)\s*of\s*(\d+)',pageInfoText)
         numPages = 0
         if m: 
             try: 
@@ -392,6 +392,8 @@ def getMovieReviewDataRT(moviepage_url):
     #print "numPages = ", numPages
     theReviews = []
     onPage = 1
+
+
     for page in range(numPages):
 
         divReviews = None
