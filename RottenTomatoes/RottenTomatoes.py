@@ -452,8 +452,8 @@ def getMovieReviewDataRT(moviepage_url):
                 aReview['fresh'] = fresh
                 aReview['topcritic'] = topCritic
                 aReview['blurb'] = blurb
+                aReview['pubdate'] = reviewDate
                 theReviews.append(aReview)
-
 
         except:
             print 'Error: onPage = ',onPage
