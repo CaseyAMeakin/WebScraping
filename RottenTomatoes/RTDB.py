@@ -236,8 +236,8 @@ def updateActorAndCharacterRTDB(con,movieid,actor):
 def updateReviewsourceRTDB(con,sourcename,url="",logfile=None,logging=False,quiet=True):
     """
     """
-    sqlSelectReviewsource_="""select sourceid from reviewsources where name = "{0}";"""
-    sqlInsertReviewsource_="""insert into reviewsources (name,url) values ("{0}","{1}");"""
+    sqlSelectReviewsource_=u"""select sourceid from reviewsources where name = "{0}";"""
+    sqlInsertReviewsource_=u"""insert into reviewsources (name,url) values ("{0}","{1}");"""
 
     sqlcmd = sqlSelectReviewsource_.format(sourcename)
     results = trySqlcmdFetchall(con,sqlcmd)
