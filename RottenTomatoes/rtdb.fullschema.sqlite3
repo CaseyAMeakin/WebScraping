@@ -57,7 +57,8 @@ criticid int,
 movieid int,
 reviewurl text default "",
 fresh int,
-blurb text,
+blurb text default "",
+date text default "",
 unique(criticid,movieid,reviewurl));
 
 CREATE TABLE critics (
