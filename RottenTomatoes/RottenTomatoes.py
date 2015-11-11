@@ -1,4 +1,3 @@
-#!/opt/local/bin/python
 import sys, re, string
 import urllib2
 from bs4 import BeautifulSoup as bs

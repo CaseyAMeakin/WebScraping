@@ -281,7 +281,7 @@ def updateReviewRTDB(con,movieid,review,logfile=None,logging=False,quiet=True):
     getReviewidUnique_ = \
         u"""select rowid from reviews where criticid = {0} and movieid = {1} and reviewurl = "{2}";"""
     insertReview_ = \
-        u"""insert into reviews (criticid,movieid,reviewurl,fresh,blurb) values ({0},{1},"{2}",{3},"{4}");"""
+        u"""insert into reviews (criticid,movieid,reviewurl,fresh,blurb,date) values ({0},{1},"{2}",{3},"{4}","{5}");"""
 
     base_url = "http://www.rottentomatoes.com"
 
@@ -312,7 +312,8 @@ def updateReviewRTDB(con,movieid,review,logfile=None,logging=False,quiet=True):
     if not results:
         fresh = int(review['fresh'])
         blurb = escapeQuotes(review['blurb'])
-        sqlcmd = insertReview_.format(criticid,movieid,reviewurl,fresh,blurb)
+        pubdate = review['pubdate']
+        sqlcmd = insertReview_.format(criticid,movieid,reviewurl,fresh,blurb,pubdate)
         results = trySqlcmdCommit(con,sqlcmd)
     else:
         print "sqlUpdateReviewRTDB. Already a review for this movie,critic pair."
