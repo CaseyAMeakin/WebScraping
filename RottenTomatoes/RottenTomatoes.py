@@ -1,5 +1,5 @@
 import sys, re, string
-import urllib2
+import urllib2, urllib
 from bs4 import BeautifulSoup as bs
 import bs4
 from nltk import word_tokenize
@@ -75,16 +75,20 @@ def makeMovieSearchURLRT(movie):
     [Array]([String]Year,[Year]Title)
     """
     base_url = 'http://www.rottentomatoes.com'
-    base_search_url = base_url + '/search/?search='
+    base_search_url = base_url + '/search/?'
     movie_title = unicode(movie[1])
-    movie_title_words = word_tokenize(stripPunct(movie_title))
-    movie_year  = movie[0]
+    movie_year  = unicode(movie[0])
+    query = {'search' : movie_title + ' ' + movie_year }
+    search_url = base_search_url + urllib.urlencode(query)
+    
+    #movie_title_words = word_tokenize(stripPunct(movie_title))
+    #movie_year  = movie[0]
     # construct search url
-    search_url = base_search_url
-    for word in movie_title_words:
-        search_url = search_url + word.lower() + '+'
-    search_url = search_url+str(movie[0])
-
+    #search_url = base_search_url
+    #for word in movie_title_words:
+    #    search_url = search_url + word.lower() + '+'
+    #search_url = search_url+str(movie[0])
+    
     return search_url
 
 
