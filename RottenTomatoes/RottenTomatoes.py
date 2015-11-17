@@ -137,7 +137,9 @@ def getMovieURLRT(movie):
     if h1MainContainer.has_attr('class'):
         if "title" in h1MainContainer.attrs['class']:
             url = resolveURL(search_url)
-            return url
+            url_split = url.split('?search')
+            url_strip = url_split[0]
+            return url_strip
 
     # otherwise inspect list of search results if found
     if "search" in h1MainContainer.get_text().lower():
@@ -222,6 +224,8 @@ def getMovieMetaDataRT(moviePageSoup,logfile=None,logging=False,quiet=True):
     releasedate = None    
     studio = None         
     runtime = None        
+    posterurl = None
+
 
     # Parse the XML with BeautifulSoup
     try:
@@ -271,6 +275,8 @@ def getMovieMetaDataRT(moviePageSoup,logfile=None,logging=False,quiet=True):
         
         if divMovieInfo: timeDuration =divMovieInfo.find("time",attrs={"itemprop":"duration"})
         if timeDuration: runtime = timeDuration['datetime']
+
+        posterurl = soup.find('img',attrs={'class':'posterImage'})['src']
         
     except:
         print 'getMovieMetaDataRT.Error.beautifulsoup4'
@@ -335,7 +341,7 @@ def getMovieMetaDataRT(moviePageSoup,logfile=None,logging=False,quiet=True):
     # load parsed data into dictionary
     metaData = {}
     keys = ['rating','ratingnotes','rtmeterall','rtmetertop','criticconsensus',
-            'synopsis','genres','releasedate','studio','runtime']
+            'synopsis','genres','releasedate','studio','runtime', 'posterurl']
     for key in keys:
         metaData[key] = ''
 
@@ -349,6 +355,7 @@ def getMovieMetaDataRT(moviePageSoup,logfile=None,logging=False,quiet=True):
     if releasedate:     metaData['releasedate'] = releasedate
     if studio:          metaData['studio'] = studio
     if runtime:         metaData['runtime'] = runtime    
+    if posterurl:       metaData['posterurl'] = posterurl
     metaData['writers'] = writers
     metaData['actors'] = actors
     metaData['directors'] = directors

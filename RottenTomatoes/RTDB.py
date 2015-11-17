@@ -96,12 +96,34 @@ def getMovieURLAndIdFromDB(con,movie):
     return (movieid,url)
 
 
+def stripSearchStringFromMovieURL(con,movie):
+    """
+    """
+    id,url = getMovieURLAndIdFromDB(con,movie)
+    new_url = None
+    if url:
+        split_url = url.split('?search')
+        new_url = split_url[0]
+    return id,new_url
+
 
 """
 Routines to update RT DB
 """
 
-def updateMoviesRTURL(con,movieid,rturl):                                                        
+
+def updateMoviesRTURL_StripSearchString(con,movie):
+    """
+    """
+    id,url = getMovieURLAndIdFromDB(con,movie)
+    id,url_strip = stripSearchStringFromMovieURL(con,movie)
+
+    if url_strip and url != url_strip:
+        updateMoviesRTURL(con,id,url_strip)
+    
+        
+
+def updateMoviesRTURL(con,movieid,rturl):
     """                                                                                          
     """                                                                                          
     sqlUpdateMovieURL_ = u"""update movies set rtmovieurl = "{0}" where rowid = "{1}";"""        
