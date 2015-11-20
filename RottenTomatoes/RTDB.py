@@ -3,6 +3,7 @@ Mostly wrappers for SQL queries on a database to store
 scraped Rotten Tomatoes data.
 """
 
+
 import sys
 from datetime import *
 from RottenTomatoes import *
@@ -137,7 +138,9 @@ def updateMovieMetaDataRTDB(con,movieid,metaData,logfile=None,logging=False,quie
     Scrape RT URL for movie meta data.
     Insert into sqlite3 tables.
     """
-    sqlGetMovieData_   = u"""select * from movies where rowid = {0};"""
+    rownames = u"""title,year,releasedate,rtmeterall,rtmetertop,criticconsensus,runtime,rating"""
+    rownames = rownames + u""",ratingnotes,medium,version,genres,studio,synopsis,rtmovieurl,posterurl"""
+    sqlGetMovieData_   = u"""select """ + rownames + u""" from movies where rowid = {0};"""
     sqlUpdateMoviesKV_ = u"""update movies set {0} = '{1}' where rowid = {2};"""
 
     sqlcmd = sqlGetMovieData_.format(movieid)
@@ -146,10 +149,10 @@ def updateMovieMetaDataRTDB(con,movieid,metaData,logfile=None,logging=False,quie
         return 'Error'
     row = results[0]
     title,year,releasedate,rtmeterall,rtmetertop,criticconsensus,runtime,rating, \
-        ratingnotes,medium,version,genres,studio,synopsis,url = row
+        ratingnotes,medium,version,genres,studio,synopsis,url,posterurl = row
 
     vars = ["releasedate","rtmeterall","rtmetertop","criticconsensus","runtime","rating", \
-                "ratingnotes","genres","studio","synopsis"]
+                "ratingnotes","genres","studio","synopsis","posterurl"]
     varlist = [var for var in vars if not eval(var)]
     for var in varlist:
         value = escapeQuotes(unicode(eval(u"""metaData['{0}']""".format(var))))
@@ -171,7 +174,7 @@ def updateMovieMetaDataRTDB(con,movieid,metaData,logfile=None,logging=False,quie
 def updatePersonRTDB(con,credited,rturl):
     """
     """
-    sqlSelectRTUrlPeople_ = u"""select personid, rturl from people where rturl = "{0}";"""
+    sqlSelectRTUrlPeople_ = u"""select people.id, rturl from people where rturl = "{0}";"""
     sqlUpdateRTUrlPeople_ = u"""insert into people (credited,rturl) values ("{0}","{1}");"""
 
     sqlcmd = sqlSelectRTUrlPeople_.format(rturl)
@@ -258,7 +261,7 @@ def updateActorAndCharacterRTDB(con,movieid,actor):
 def updateReviewsourceRTDB(con,sourcename,url="",logfile=None,logging=False,quiet=True):
     """
     """
-    sqlSelectReviewsource_=u"""select sourceid from reviewsources where name = "{0}";"""
+    sqlSelectReviewsource_=u"""select id from reviewsources where name = "{0}";"""
     sqlInsertReviewsource_=u"""insert into reviewsources (name,url) values ("{0}","{1}");"""
 
     sqlcmd = sqlSelectReviewsource_.format(sourcename)
@@ -284,12 +287,12 @@ def updateCriticRTDB(con,personid,sourceid,topcritic=0,logfile=None,logging=Fals
 
     if results:
         criticid = results[0][0]
+        if not quiet: print u"""updateCriticRTDB: critic already in db"""
     else:
         sqlcmd = sqlInsertCritic_.format(personid,sourceid,int(topcritic))
         criticid = trySqlcmdCommit(con,sqlcmd)
 
     return criticid
-
 
 
 def updateReviewRTDB(con,movieid,review,logfile=None,logging=False,quiet=True):
@@ -369,7 +372,7 @@ def populateActorsAndCharacters(con,movie):
 
     result = getMovieMetaDataRT(url)
     if result:
-        exitCode,metaData = result
+        metaData = result
         if not metaData:
             print 'Error.getMovieMetaDataRT'
             return
@@ -394,9 +397,10 @@ def populateMovieMetaData(con,movie):
         print 'Error: getMovieURLAndIdFromDB'
         return
 
-    result = getMovieMetaDataRT(url)
+    soup = getTheSoup(url)
+    result = getMovieMetaDataRT(soup)
     if result:
-        exitCode,metaData = result
+        metaData = result
         if not metaData:
             print 'Error.getMovieMetaDataRT'
             return

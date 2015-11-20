@@ -229,9 +229,10 @@ def getMovieMetaDataRT(moviePageSoup,logfile=None,logging=False,quiet=True):
 
     # Parse the XML with BeautifulSoup
     try:
+        
         divScorePanel = soup.find("div",attrs={"id":"scorePanel"})
         if divScorePanel: divTabContent = divScorePanel.find("div",attrs={"class":"tab-content"})
-        if divTabContent: divAllCriticsNumbers = divTabContent.find("div",attrs={"id":"all-critics-numbers"})
+        if divTabContent: divAllCriticsNumbers = divTabContent.find("div",attrs={"id":"all-critics-numbers"})        
         if divAllCriticsNumbers: 
             spanAllCriticsRatingValue = divAllCriticsNumbers.find("span",attrs={"itemprop":"ratingValue"})
         if spanAllCriticsRatingValue:
