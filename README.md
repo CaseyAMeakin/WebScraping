@@ -1,8 +1,9 @@
 # WebScraping
 
-Webscraping routines for Rotten Tomatoes (RT) and Movie Review Query Engine (MRQE). These python routines depend on Beautiful Soup (bs4) and natural language toolkit (nltk).
+Webscraping routines for personal projects. These python routines depend on Beautiful Soup (bs4) and natural langu\
+age toolkit (nltk).
 
-Some wrapper code has been written to do SQL queries on a database to facilitate storing the scraped data. Currently wrapped around SQLite3.
+Some wrapper code has been written to do SQL queries on a database to facilitate storing the scraped data. Currently wrapped around SQLite3 for simplicity (Note: update this to use MySql instead).
 
 #### RottenTomatoes (RT)
 
@@ -24,7 +25,6 @@ The following functions are defined:
  - movie rating
  - movie rating description text
 
-
 **getMovieReviewLinksRT**([string]url) - returns critic review information including:
  - critic name
  - publication source
@@ -32,3 +32,7 @@ The following functions are defined:
  - fresh or rotten [boolean]
  - top cricit flag [boolean]
  - URL to full review
+
+
+#### NFL_News
+
