@@ -1,0 +1,82 @@
+CREATE TABLE movies (
+id INTEGER primary key,
+title text,
+year int,
+releasedate text,
+rtmeterall int,
+rtmetertop int,
+criticconsensus text,
+runtime text,
+rating text,
+ratingnotes text,
+medium text,
+version text,
+genres text,
+studio text,
+synopsis text,
+rtmovieurl text,
+posterurl text,	   
+unique(title,year));
+
+CREATE TABLE people(
+ id INTEGER primary key,
+ credited text,
+ first text,
+ middle text,
+ last text,
+ other text,
+ akas text,
+ notes text,
+ dob text,
+ gender text,
+ rturl text,
+ wkurl text,
+ unique(rturl));
+
+CREATE TABLE actors(
+id integer primary key,
+personid int,
+movieid int,
+unique(personid,movieid));
+
+CREATE TABLE directors (
+id integer primary key,
+personid int,
+movieid int,
+unique(personid,movieid));
+
+CREATE TABLE writers(
+id integer primary key,
+personid int,
+movieid int,
+unique(personid,movieid));
+
+CREATE TABLE characters (
+id integer primary key,
+actorid int,
+movieid int,
+name text,
+unique(actorid,movieid,name));
+
+CREATE TABLE reviews (
+id integer primary key,
+criticid int,
+movieid int,
+reviewurl text,
+fresh int,
+blurb text,
+date text,
+unique(criticid,movieid,reviewurl));
+
+CREATE TABLE critics (
+id integer primary key,
+personid int,
+sourceid int,
+topcritic int,
+unique(personid,sourceid));
+
+CREATE TABLE reviewsources (
+id integer primary key,
+name text,
+url text,
+unique(name,url));
