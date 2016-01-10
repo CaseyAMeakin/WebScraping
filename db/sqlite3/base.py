@@ -4,6 +4,7 @@ Wrappers for SQL queries on a sqlite3 database.
 
 import sys
 import sqlite3 as lite
+import re
 
 
 def escapeQuotes(string):
