@@ -4,13 +4,13 @@ wrappers for SQL queries on a mysql database
 import MySQLdb as mdb
 
 
-def connectMysql(db,dbuser,dbpw):
+def connectMysql(db,dbuser,dbpw,Quiet=True):
     """
     """
     try:
         con = mdb.connect(db=db,user=dbuser,passwd=dbpw)
     except:
-        print 'Trouble connecting to MySQL db'
+        if not Quiet: print 'Trouble connecting to MySQL db'
         con = None
     return con
         
