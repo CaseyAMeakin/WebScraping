@@ -4,6 +4,7 @@ CREATE TABLE `authors` (
   `first` longtext,
   `last` longtext,
   `blurb` longtext,
+  `url` longtext,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8
 
