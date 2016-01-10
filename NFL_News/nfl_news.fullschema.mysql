@@ -6,3 +6,15 @@ CREATE TABLE `authors` (
   `blurb` longtext,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8
+
+CREATE TABLE `articles` (
+  `id` int(11) NOT NULL,
+  `authorid` int(11) NOT NULL,
+  `title` longtext NOT NULL,
+  `metatitle` longtext,
+  `pubdate` longtext,
+  `updatedtime` longtext,
+  `bodytext` longtext,
+  `url` longtext,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8
