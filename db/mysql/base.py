@@ -1,3 +1,6 @@
+"""
+wrappers for SQL queries on a mysql database
+"""
 import MySQLdb as mdb
 
 
@@ -21,3 +24,17 @@ def tryMysqlFetchall(con,sqlcmd):
     except:
         query    = []
     return query
+
+
+def tryMysqlcmdCommit(con,sqlcmd):
+    """
+    """
+    try:
+        cur = con.cursor()
+        curcall = cur.execute(sqlcmd)
+        con.commit()
+    except:
+        curcall = None
+    return curcall
+
+
