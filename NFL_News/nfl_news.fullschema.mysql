@@ -1,0 +1,8 @@
+Create Table: CREATE TABLE `authors` (
+  `id` int(11) NOT NULL,
+  `credited` longtext NOT NULL,
+  `first` longtext,
+  `last` longtext,
+  `blurb` longtext,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8
