@@ -1,5 +1,6 @@
 """
-Functions and data for parsing news articles on the nfl.com website.
+Functions and data for parsing news articles on the nfl.com website
+Author list updated: Jan 9, 2016
 """
 
 from ParseLib import *
@@ -99,3 +100,5 @@ def getAuthorNameBlurb(authorUrl):
         pass
     
     return name,blurb
+
+
