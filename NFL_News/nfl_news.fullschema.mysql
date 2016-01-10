@@ -1,4 +1,4 @@
-Create Table: CREATE TABLE `authors` (
+CREATE TABLE `authors` (
   `id` int(11) NOT NULL,
   `credited` longtext NOT NULL,
   `first` longtext,
