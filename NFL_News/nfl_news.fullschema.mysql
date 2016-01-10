@@ -1,5 +1,5 @@
 CREATE TABLE `authors` (
-  `id` int(11) NOT NULL,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `credited` longtext NOT NULL,
   `first` longtext,
   `last` longtext,
@@ -8,7 +8,7 @@ CREATE TABLE `authors` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8
 
 CREATE TABLE `articles` (
-  `id` int(11) NOT NULL,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `authorid` int(11) NOT NULL,
   `title` longtext NOT NULL,
   `metatitle` longtext,
